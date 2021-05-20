@@ -7,28 +7,28 @@ c=ConstantObj();  % all the constants, we suggest to use c.g rather than 9.81 in
 fil=filObj('read_from_file','no');
 
 % the default value for 'fid' is -1, meaning, this will not write to SUTRA.fil if export
-fil.terms.('inp').('fname')  = 'PART1.inp' ; fil.terms.('inp').('fid')   = 50;
-fil.terms.('ics').('fname')  = 'PART1.ics' ; fil.terms.('ics').('fid')   = 55;
-fil.terms.('lst').('fname')  = 'PART1.lst' ; fil.terms.('lst').('fid')   = 60;
-fil.terms.('rst').('fname')  = 'PART1.rst' ; fil.terms.('rst').('fid')   = 66;
-fil.terms.('nod').('fname')  = 'PART1.nod' ; fil.terms.('nod').('fid')   = 30;
-fil.terms.('ele').('fname')  = 'PART1.ele' ; fil.terms.('ele').('fid')   = 40;
-fil.terms.('obs').('fname')  = 'PART1.obs' ; fil.terms.('obs').('fid')   = 70;
-fil.terms.('smy').('fname')  = 'PART1.smy' ; fil.terms.('smy').('fid')   = 80;
-fil.terms.('bcof').('fname') = 'PART1.bcof'; fil.terms.('bcof').('fid')  = 91;
-fil.terms.('bcos').('fname') = 'PART1.bcos'; fil.terms.('bcos').('fid')  = 93;
-fil.terms.('bcop').('fname') = 'PART1.bcop'; fil.terms.('bcop').('fid')  = 92;
-fil.terms.('bcou').('fname') = 'PART1.bcou'; fil.terms.('bcou').('fid')  = 94;
+fil.terms.('inp').('fname')  = 'FLUME.inp' ; fil.terms.('inp').('fid')   = 50;
+fil.terms.('ics').('fname')  = 'FLUME.ics' ; fil.terms.('ics').('fid')   = 55;
+fil.terms.('lst').('fname')  = 'FLUME.lst' ; fil.terms.('lst').('fid')   = 60;
+fil.terms.('rst').('fname')  = 'FLUME.rst' ; fil.terms.('rst').('fid')   = 66;
+fil.terms.('nod').('fname')  = 'FLUME.nod' ; fil.terms.('nod').('fid')   = 30;
+fil.terms.('ele').('fname')  = 'FLUME.ele' ; fil.terms.('ele').('fid')   = 40;
+fil.terms.('obs').('fname')  = 'FLUME.obs' ; fil.terms.('obs').('fid')   = 70;
+fil.terms.('smy').('fname')  = 'FLUME.smy' ; fil.terms.('smy').('fid')   = 80;
+fil.terms.('bcof').('fname') = 'FLUME.bcof'; fil.terms.('bcof').('fid')  = 91;
+fil.terms.('bcos').('fname') = 'FLUME.bcos'; fil.terms.('bcos').('fid')  = 93;
+fil.terms.('bcop').('fname') = 'FLUME.bcop'; fil.terms.('bcop').('fid')  = 92;
+fil.terms.('bcou').('fname') = 'FLUME.bcou'; fil.terms.('bcou').('fid')  = 94;
 
 
 fil.export_to_file();
 
 c_saltwater_kgPkg          = 0.035;
-c_freshwater_kgPkg         = 0.001;
+c_freshwater_kgPkg         = 0.0001;
 initial_head_aquifer_m     = -2.8;
-initial_pond_water_depth_m = 0.5;
-permeability_silt_m2       = 5.38e-15;
-permeability_sand_m2       = 5.38e-11;
+%initial_pond_water_depth_m = 0.5;
+%permeability_silt_m2       = 5.38e-15;
+permeability_sand_m2       = 5.67e-11;
 pond_radius_m              = 50.1;
 
 %% inp file
