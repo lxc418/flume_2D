@@ -1,20 +1,11 @@
 clear
 %% input
-% x
-x(1,1) = 0;
-x(1,2) = 0;
 
-nx(1) = 20;
+x0_1 = 0;
+x0_2 = 1.2;
+nx_1 = 60;
 
-x(1,1) = 0.6;
-x(1,2) = 0.6;
 
-nx(1) = 30;
-
-x(1,1) = 1.1;
-x(1,2) = 1.2;
-
-%y (input follow transverse direction)
 y(1,1)=0;
 y(1,2)=0;
 
@@ -33,13 +24,9 @@ ny(3)=30;
 y(4,1)=0.4;
 y(4,2)=0.3;
 
-
 %% process
 x_array = x0_1:(x0_2-x0_1)/nx_1:x0_2;
 ny_sum=sum(ny);
-
-x_keyline = size (x,1); 
-
 y_keyline = size (y,1); %control lines in height
 
 for i=1:y_keyline
