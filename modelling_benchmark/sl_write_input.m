@@ -7,7 +7,7 @@ c=ConstantObj();  % all the constants, we suggest to use c.g rather than 9.81 in
 fil=filObj('read_from_file','no');
 
 % the default value for 'fid' is -1, meaning, this will not write to SUTRA.fil if export
-fil.terms.('vapinp').('fname')  = 'FLUME.vapinp' ; fil.terms.('vapinp').('fid')   = 50;
+fil.terms.('inp').('fname')  = 'FLUME.inp' ; fil.terms.('inp').('fid')   = 50;
 fil.terms.('ics').('fname')  = 'FLUME.ics' ; fil.terms.('ics').('fid')   = 55;
 fil.terms.('lst').('fname')  = 'FLUME.lst' ; fil.terms.('lst').('fid')   = 60;
 fil.terms.('rst').('fname')  = 'FLUME.rst' ; fil.terms.('rst').('fid')   = 66;
@@ -23,107 +23,93 @@ fil.terms.('bcou').('fname') = 'FLUME.bcou'; fil.terms.('bcou').('fid')  = 94;
 
 fil.export_to_file();
 
-c_saltwater_kgPkg          = 0.035;
-c_freshwater_kgPkg         = 0.0001;
-initial_head_aquifer_m     = -2.8;
-%initial_pond_water_depth_m = 0.5;
-%permeability_silt_m2       = 5.38e-15;
-permeability_sand_m2       = 5.67e-11;
-pond_radius_m              = 50.1;
+%%
+%soil properties 
+porosity                    = 0.39;
+c_saltwater_kgPkg           = 0.035;
+c_freshwater_kgPkg          = 0.0001;
+water_table_m               = 0.1;
+initial_temperature_C       = 25;
+initial_concentration_kgPkg = 0.035;
+initial_pond_water_depth_m  = 0.5;
+permeability_silt_m2        = 5.38e-15;
+permeability_sand_m2        = 5.67e-11;
+pond_radius_m               = 50.1;
 
-%% vapinp file
-dx      = 1.0;
-dy      = 1;  % vertical direction
-dz      = 1;
-
-x_array = 0:dx:100;
-y_array = -10:dy:1;
-nx      = length(x_array);
-ny      = length(y_array);
+%% inp file
+x1 = 0;
+x2 = 1.2;
+nex = 60; %Number of segments along x
 
 
+y(1,1)=0;
+y(1,2)=0;
 
-x0_1=0;
-x0_2=1.2;
-nx_1 = 60;
-x_array = x0_1:(x0_2-x0_1)/nx_1:x0_2;
+ney_section(1)=10;
 
-y0_1=0.;
-y0_2=0.;
+y(2,1)=0.2;
+y(2,2)=0.1;
 
-y1_1=0.1;
-y1_2=0.1;
-ny_1=10;
+ney_section(2)=20;
 
-y2_1=0.2;
-y2_2=0.2;
-ny_2=20;
+y(3,1)=0.3;
+y(3,2)=0.2;
 
-y3_1=0.4;
-y3_2=0.3;
-ny_3=30;
+ney_section(3)=30;
 
-ny=ny_1+ny_2+ny_3;
+y(4,1)=0.4;
+y(4,2)=0.3;
 
-if y0_1==y0_2
-y_array0(1:nx_1+1) = y0_1;
-else
-y_array0 = y0_1:(y0_2-y0_1)/nx_1:y0_2;
-end
-if y1_1==y1_2
-y_array1(1:nx_1+1) = y1_1;
-else
-y_array1 = y1_1:(y1_2-y1_1)/nx_1:y1_2;
-end
-if y2_1==y2_2
-y_array2(1:nx_1+1) = y2_1;
-else
-y_array2 = y2_1:(y2_2-y2_1)/nx_1:y2_2;
-end
-if y3_1==y3_2
-y_array3(1:nx_1+1) = y3_1;
-else
-y_array3 = y3_1:(y3_2-y3_1)/nx_1:y3_2;
-end
+dz=0.01;
 
-y1_interval=(y_array1(id)-y_array0(id))/ny_1
-y2_interval=(y_array2(id)-y_array1(id))/ny_2
-y3_interval=(y_array3(id)-y_array2(id))/ny_3
+%% process coordinate of nodes
+ney     =sum(ney_section);
+nx      =nex+1;
+ny      =ney+1;
 
-for id=1:nx_1+1
+x_array = x1:(x2-x1)/nex:x2;
+y_keyline = size (y,1); %control lines in height
 
-x_nod ( (id-1)*ny+1: id*(ny+1) )= x_array(id);
-y_nod ( (id-1)*ny+1: id*(ny+1) )= [y_array0(id):y1_interval:y_array1(id) y_array1(id)+y2_interval:y2_interval:y_array2(id) y_array2(id)+y3_interval:y3_interval:y_array3(id)];
+for i=1:y_keyline
+
+	y_key_interval=(y(i,2)-y(i,1))/nex;
+
+	if y_key_interval==0
+		y_array(i,1:nx) = y(i,1);
+	else
+		y_array(i,1:nx) = y(i,1):y_key_interval:y(i,2);
+	end
 
 end
 
+for i=1:nx
+
+        x_nod_mtx ( (i-1)*ny+1: i*ny )= x_array(i);
+
+	for j=1:y_keyline-1
+        
+        y_interval (j,i) = (y_array(j+1,i)-y_array(j,i))./ney_section(j);      
+        y_location (1)   = 0;
+        y_location (j+1) = sum(ney_section(1:j));
+                
+        y_nod_mtx ( ney*(i-1)+i + y_location(j):ney*(i-1)+i + y_location (j+1) )= y_array(j,i): y_interval(j,i) : y_array(j+1,i) ; 
+    end
+    
+	
+end
+%%
+nn       =  nx*ny;
+ne       =  nex*ney;
+sequence = 'yxz';
+
+%dataset 14
+ii = (1:nn)';
+x_nod_array  = x_nod_mtx(:);
+y_nod_array  = y_nod_mtx(:);
 
 
-nx      = length(x_array);
-
-
-
-y_0=0;
-
-ny_1 = 10;
-y2_1=0.1;
-y2_2=0.1;
-
-ny_2 = 20;
-y3_1=0.2;
-y3_2=0.2;
-
-ny_3 = 30;
-y4_1=0.4;
-y4_2=0.3;
-
-y_array = [y_0:(y_1-y_0)/ny_1:x_1,];
-
-
-nex  = length(x_array)-1;
-ney  = length(y_array)-1;
-
-[x_nod_mtx,y_nod_mtx]=meshgrid(x_array,y_array);
+%node_index_mtx = flip(reshape(ii,ny,nx));  %note node_index_mtx(52) = 52
+node_index_mtx = reshape(ii,ny,nx);  %note node_index_mtx(52) = 52
 
 keynodes            = zeros(size(x_nod_mtx,1),size(x_nod_mtx,2)+1);
 keynodes(:,2:end-1) = (x_nod_mtx(:,1:end-1)+x_nod_mtx(:,2:end))/2;
@@ -137,26 +123,12 @@ keynodes(1,:)       = y_nod_mtx(1,:);
 keynodes(end,:)     = y_nod_mtx(end,:);
 dy_cell_mtx         = diff(keynodes,1,1); % check inbuilding function diff
 
-
-nn       = nx*ny;
-ne       = (nx-1)*(ny-1);
-sequence = 'yxz';
-
-%dataset 14
-ii = (1:nn)';
-x_nod_array  = x_nod_mtx(:);
-y_nod_array  = y_nod_mtx(:);
-
-
-%node_index_mtx = flip(reshape(ii,ny,nx));  %note node_index_mtx(52) = 52
-node_index_mtx = reshape(ii,ny,nx);  %note node_index_mtx(52) = 52
-
 % the reason of having a gravity compensated matrix is that the node reflects a xy domain with gravity facing down. 
 % the original matrix has the same shape as the one with gravity compensation but it is bottom-up
 
 node_index_mtx_gravity_compensated = flip(node_index_mtx);   % this makes a matrix that maps the node position in a xy plane.
-y_nod_mtx_gravity_compensated_m      = flip(y_nod_mtx);
-x_nod_mtx_gravity_compensated_m      = flip(x_nod_mtx);
+y_nod_mtx_gravity_compensated_m    = flip(y_nod_mtx);
+x_nod_mtx_gravity_compensated_m    = flip(x_nod_mtx);
 dx_cell_mtx_gravity_compensated    = flip(dx_cell_mtx);
 
 idx = 1;
@@ -188,11 +160,15 @@ y_ele_mtx_m = reshape(y_ele_array, ny-1,nx-1);
 x_ele_mtx_gravity_compensated_m = flip(x_ele_mtx_m);
 y_ele_mtx_gravity_compensated_m = flip(y_ele_mtx_m);
 
-
-%% dataset 17
-%iqcp = -node_index_mtx_gravity_compensated(1,:)' ; % top cell,negative means evaporation is included
-%qinc = dx_cell_mtx_gravity_compensated(1,:)' *dz ;
-%uinc = zeros(size(iqcp)) +1e-4;   % evaporating water concentration
+%% dataset 17 ##Caution: in Sutravap, dateset 17 is used to locate the nodes starting from top layer to bottom
+%               iqcp are all node numbers with a negetive sign since the
+%               vapor flow not only occurs on the surface. qinc and uinc
+%               are row and column where the node is located, respectively.
+iqcp = -reshape(node_index_mtx_gravity_compensated',nn,1) ; % top cell,negative means evaporation is included
+qinc= mod(-iqcp,nx);
+qinc(find(~-qinc))= nx;
+qinc=nx+1-qinc;
+uinc = (-iqcp + qinc-1)./nx;   % evaporating water concentration
 
 
 
@@ -201,20 +177,20 @@ y_ele_mtx_gravity_compensated_m = flip(y_ele_mtx_m);
 %pbc  = zeros(size(ipbc)) - 7.37325e+03;
 %ubc  = zeros(size(ipbc)) + 3.0e-03;
 
-
+%% INPUT FROM DATESET1 TO 22
 % PART1 is the name
-vapinp = vapinpObj('PART1','read_from_file','no');   % setup a empty inpObj
+inp = vapinpObj('FLUME','read_from_file','no');   % setup a empty inpObj
 
 % ##  DATASET 1
-vapinp.title1 = '2-D flume simulation for medium sand (2021)';
-vapinp.title2 = 'Generating input using sutralab';
+inp.title1 = '2-D flume simulation for medium sand (2021)';
+inp.title2 = 'Generating input using sutralab';
 
 % ##  DATASET 2A
 %'SUTRA VERSION 2.2 SOLUTE TRANSPORT'
 %'2D REGULAR MESH' 105 4001
 
-vapinp.vermin = '2.2';  % note this should be a string not a number;
-vapinp.simula = 'SOLUTE';
+inp.vermin = '2.2';  % note this should be a string not a number;
+inp.simula = 'SOLUTE';
 
 
 % ##  DATASET 2B
@@ -225,93 +201,86 @@ vapinp.simula = 'SOLUTE';
  %        regular mesh     ==>   ktype(2) = 2
  %        blockwise mesh   ==>   ktype(2) = 3
 
-vapinp.ktype(1)  = 2;  % 2D mesh
-vapinp.mshtyp{1} = '2D';
-vapinp.mshtyp{2} = 'REGULAR';
+inp.ktype(1)  = 2;  % 2D mesh
+inp.mshtyp{1} = '2D';
+inp.mshtyp{2} = 'REGULAR';
 
-vapinp.nn1 = ny;
-vapinp.nn2 = nx;
+inp.nn1 = ny;
+inp.nn2 = nx;
 
 
 % ##  DATASET 3:  Simulation Control Numbers
-vapinp.nn   = nn;
-vapinp.ne   = ne;
-vapinp.npbc = 0;   %length(ipbc);  revised after dataset 19
-vapinp.nubc = 0;
-vapinp.nsop = 0;       % dataset 17
-vapinp.nsou = 0;
-vapinp.nobs = 0;
+inp.nn   = nn;
+inp.ne   = ne;
+inp.npbc = 0;   %length(ipbc);  updated after dataset 19
+inp.nubc = 0;
+inp.nsop = nn;  %dataset 17
+inp.nsou = 0;
+inp.nobs = 0;
+
+%##  DATASET 4:  Simulation Mode Options
+inp.cunsat = 'UNSATURATED';
+inp.cssflo = 'TRANSIENT FLOW';
+inp.csstra = 'TRANSIENT TRANSPORT';
+inp.cread  = 'COLD' ;
+inp.istore = 9999;
 
 
-%%##  DATASET 4:  Simulation Mode Options
-
-vapinp.cunsat = 'UNSATURATED';
-vapinp.cssflo = 'TRANSIENT FLOW';
-vapinp.csstra = 'TRANSIENT TRANSPORT';
-vapinp.cread  = 'COLD' ;
-vapinp.istore = 9999;
+%##  DATASET 5:  Numerical Control Parameters
+inp.up   = 0;
+inp.gnup = 0.01;
+inp.gnuu = 0.01;
 
 
-%%##  DATASET 5:  Numerical Control Parameters
-vapinp.up   = 0;
-vapinp.gnup = 0.01;
-vapinp.gnuu = 0.01;
-
-
-%  DATASET 6:  Temporal Control and Solution Cycling Data
-%  
-vapinp.nsch  = 1;
-vapinp.npcyc = 1;
-vapinp.nucyc = 1;
+%DATASET 6:  Temporal Control and Solution Cycling Data  
+inp.nsch  = 1;
+inp.npcyc = 1;
+inp.nucyc = 1;
 
 %DATASET 6:  Temporal Control and Solution Cycling Data
-
-vapinp.schnam = 'TIME_STEPS';
-vapinp.schtyp = 'TIME CYCLE';
-vapinp.creft  = 'ELAPSED';
-vapinp.scalt  = 10.; 
-vapinp.ntmax  = 170000; %around 20 days
-vapinp.timei  = 0;
-vapinp.timel  = 1.e99;
-vapinp.timec  = 1.;
-vapinp.ntcyc  = 9999;
-vapinp.tcmult = 1;
-vapinp.tcmin  = 1.e-20;
-vapinp.tcmax  = 1.e99;
-
+inp.schnam = 'TIME_STEPS';
+inp.schtyp = 'TIME CYCLE';
+inp.creft  = 'ELAPSED';
+inp.scalt  = 10.; 
+inp.ntmax  = 170000; %around 20 days
+inp.timei  = 0;
+inp.timel  = 1.e99;
+inp.timec  = 1.;
+inp.ntcyc  = 9999;
+inp.tcmult = 1;
+inp.tcmin  = 1.e-20;
+inp.tcmax  = 1.e99;
 
 %##  DATASET 7:  ITERATION AND MATRIX SOLVER CONTROLS
 %##  [ITRMAX]        [RPMAX]        [RUMAX]
-vapinp.itrmax = 100;
-vapinp.rpmax  = 5e+3;
-%vapinp.rpmax = 5e-2;  TO200317 too strigent for the first step
-vapinp.rumax  = 1.0e-2;
+inp.itrmax = 100;
+inp.rpmax  = 5e+3;
+%inp.rpmax = 5e-2;  TO200317 too strigent for the first step
+inp.rumax  = 1.0e-2;
 % ##  [CSOLVP]  [ITRMXP]         [TOLP]
-vapinp.csolvp = 'ORTHOMIN' ;
-vapinp.itrmxp = 2000;
-vapinp.tolp   = 1.e-12;
+inp.csolvp = 'ORTHOMIN' ;
+inp.itrmxp = 2000;
+inp.tolp   = 1.e-12;
 
 %##  [CSOLVU]  [ITRMXU]         [TOLU]
-vapinp.csolvu = 'ORTHOMIN';
-vapinp.itrmxu = 2000;
-vapinp.tolu   = 1.e-12;
-
+inp.csolvu = 'ORTHOMIN';
+inp.itrmxu = 2000;
+inp.tolu   = 1.e-12;
 
 %##  DATASET 8:  Output Controls and Options
 %## [NPRINT]  [CNODAL]  [CELMNT]  [CINCID]  [CPANDS]  [CVEL]  [CCORT] [CBUDG]   [CSCRN]  [CPAUSE]
 %   2920        'N'        'N'        'N'        'Y'     'Y'        'Y'    'Y'      'Y' 'Y' 'Data Set 8A'
 
-vapinp.nprint = 100;
-vapinp.cnodal = 'N';
-vapinp.celmnt = 'N';
-vapinp.cincid = 'N';
-vapinp.cpands = 'N';
-vapinp.cvel   = 'N';
-vapinp.ccort  = 'N';
-vapinp.cbudg  = 'Y';
-vapinp.cscrn  = 'N';   % screen output
-vapinp.cpause = 'Y';
-
+inp.nprint = 100;
+inp.cnodal = 'N';
+inp.celmnt = 'N';
+inp.cincid = 'N';
+inp.cpands = 'N';
+inp.cvel   = 'N';
+inp.ccort  = 'N';
+inp.cbudg  = 'Y';
+inp.cscrn  = 'N';   % screen output
+inp.cpause = 'Y';
 
 %## [NCOLPR]    [NCOL]
 %     -1000  'N'  'X'  'Y'  'P'  'U'  'S'  '-' 
@@ -323,70 +292,63 @@ vapinp.cpause = 'Y';
 %     1000         1000       1000      1000       'Y'
 %##
 
-vapinp.ncolpr = -100;
-%vapinp.ncol  = 'N'  'X'  'Y'  'P'  'U'  'S'  '-';
-vapinp.ncol   = {['N'],['X' ],[ 'Y'  ],['P' ],[ 'U' ],[ 'S' ],[ '-']};
+inp.ncolpr = -100;
+%inp.ncol  = 'N'  'X'  'Y'  'P'  'U'  'S'  '-';
+inp.ncol   = {['N'],['X' ],[ 'Y'  ],['P' ],[ 'U' ],[ 'S' ],[ '-']};
 
-vapinp.lcolpr = 100;
-vapinp.lcol   = {[ 'E' ],[ 'X' ],[ 'Y'  ],['VX' ],['VY' ],['-']};
+inp.lcolpr = 100;
+inp.lcol   = {[ 'E' ],[ 'X' ],[ 'Y'  ],['VX' ],['VY' ],['-']};
 
-
-vapinp.nbcfpr = 100;
-vapinp.nbcspr = 100;
-vapinp.nbcppr = 100;
-vapinp.nbcupr = 100;
-vapinp.cinact = 'Y';
-
-
+inp.nbcfpr = 100;
+inp.nbcspr = 100;
+inp.nbcppr = 100;
+inp.nbcupr = 100;
+inp.cinact = 'Y';
 
 %##    DATASET 9:  FLUID PROPERTIES
 %##     [COMPFL]           [CW]       [SIGMAW]        [RHOW0]       [URHOW0]        [DRWDU]        [VISC0]
 %         0.0                1.         3.890D-10         1.0E+3             0.     7.0224E+02         1.0E-3
-%##
-vapinp.compfl = 1.e-11;
-vapinp.cw     = 1.;
-vapinp.sigmaw = 1.e-9;
-vapinp.rhow0  = 1000;
-vapinp.urhow0 = 0.;
-vapinp.drwdu  = 700.;
-vapinp.visc0  = 0.001;
-vapinp.dvidu  = 3.25e-3;
+inp.compfl = 1.e-11;
+inp.cw     = 1.;
+inp.sigmaw = 1.e-9;
+inp.rhow0  = 1000;
+inp.urhow0 = 0.;
+inp.drwdu  = 700.;
+inp.visc0  = 0.001;
+inp.dvidu  = 3.25e-3;
 
 %##      DATASET 10:  SOLID MATRIX PROPERTIES
-vapinp.compma = 1.e-7;
-vapinp.cs     = 0.;
-vapinp.sigmas = 0.;
-vapinp.rhos   = 2600.;   %solid density of sodium chloride
+inp.compma = 1.e-7;
+inp.cs     = 0.;
+inp.sigmas = 0.;
+inp.rhos   = 2600.;   %solid density of sodium chloride
 
 %##  DATASET 11:  Adsorption Parameters
 %##     [ADSMOD]         [CHI1]         [CHI2]
 %#'NONE'
 %'FREUNDLICH' 1.D-47 0.05  #less rigid
 
-%vapinp.adsmod = 'FREUNDLICH';
-vapinp.adsmod = 'NONE';
-vapinp.chi1   = 1.e-46;
-vapinp.chi2   = 0.05 ;
+%inp.adsmod = 'FREUNDLICH';
+inp.adsmod = 'NONE';
+inp.chi1   = 1.e-46;
+inp.chi2   = 0.05 ;
 
-
-%##
 %##  DATASET 12:  Production of Energy or Solute Mass
 %##     [PRODF0]       [PRODS0]       [PRODF1]       [PRODS1]
 %0.             0.             0.             0.
-vapinp.prodf0 = 0.;
-vapinp.prods0 = 0.;
-vapinp.prodf1 = 0.;
-vapinp.prods1 = 0.;
+inp.prodf0 = 0.;
+inp.prods0 = 0.;
+inp.prodf1 = 0.;
+inp.prods1 = 0.;
 
-
-%##
 %##  DATASET 13:  Orientation of Coordinates to Gravity
 %##      [GRAVX]        [GRAVY]        [GRAVZ]
 %0.           -9.81          0.
-vapinp.gravx  = 0;
-vapinp.gravy  = -9.81;
-vapinp.gravz  = 0;
+inp.gravx  = 0;
+inp.gravy  = -9.81;
+inp.gravz  = 0;
 
+%% EVAPORATION RELATED INPUT
 %##  DATASET 13B: TIDE FLUCTUATION IN USUBS
 %#   TA    -- TIDAL AMPLITUDE(M); 
 % #   TP    -- TIDAL PERIOD(S); 
@@ -397,12 +359,12 @@ vapinp.gravz  = 0;
 % ##         [TA]           [TP]           [TM]        [RHOST]        [SC]    [ITT]
             % 0.0       4.32D+4          0.D+0        1025.0D+0    3.57D-02      2
 
-vapinp.ta     = 0.;
-vapinp.tp     = 4.32e4;
-vapinp.tm     = 0.;
-vapinp.rhost  = 1025.;			
-vapinp.sc     = 3.57e-2;
-vapinp.itt    = 2;				
+inp.ta     = 0.;
+inp.tp     = 4.32e4;
+inp.tm     = 0.;
+inp.rhost  = 1025.;			
+inp.sc     = 3.57e-2;
+inp.itt    = 2;				
 			
 
 % ##  DATASET 13C: CONTROLLING PARAMETERS
@@ -433,14 +395,14 @@ vapinp.itt    = 2;
 % #              MRK=2, USE FAYER (1995) BASED RELATIVE K
 % ##   [MET] [MAR] [MSR] [MSC]  [MHT]  [MVT]  [MFT]     [MRK]
       % 2      1    9    1      2     1        1         1
-vapinp.met    = 2;
-vapinp.mar    = 1;
-vapinp.msr    = 9;
-vapinp.msc    = 1;			
-vapinp.mht    = 2;
-vapinp.mvt    = 1;				
-vapinp.mft    = 1;	
-vapinp.mrk    = 1;	
+inp.met    = 2;
+inp.mar    = 1;
+inp.msr    = 9;
+inp.msc    = 1;			
+inp.mht    = 2;
+inp.mvt    = 1;				
+inp.mft    = 1;	
+inp.mrk    = 1;	
 			
       
 % ##  DATASET 13D: EVAPORATION SINARIO
@@ -457,12 +419,12 @@ vapinp.mrk    = 1;
 % #     ITE... TEMPERATORYLY NOT USING, IT WAS DESIGNED FOR THE NUMBER OF TIME CALL FOR BCTIME
 % ##         [QET]         [UET]          [PET]          [UVM]        [NIGHT]     [ITE]
             % 2.0          1.D-5       -0.001D+00      0.264D0           0          1
-vapinp.qet    = 2.;
-vapinp.uet    = 1.e-5;
-vapinp.pet    = -0.001;
-vapinp.uvm    = 0.264;			
-vapinp.night  = 0;
-vapinp.ite    = 1;				
+inp.qet    = 2.;
+inp.uet    = 1.e-5;
+inp.pet    = -0.001;
+inp.uvm    = 0.264;			
+inp.night  = 0;
+inp.ite    = 1;				
 					
             
 % ##  DATASET 13E: EVAPORATION PARAMETER
@@ -481,16 +443,16 @@ vapinp.ite    = 1;
 % ##              SEE PAGE
 % ##         [TMA]       [TMI]      [ALF]        [RS]        [RH]        [AP]        [BP]       [U2]       [TSD]    [SCF]
             % 25.D0      25.0       0.2       58.67214    0.52     17.8636        0.044     329.5       24.2D0      0.1818
-vapinp.tma   = 35.;
-vapinp.tmi   = 25.;
-vapinp.alf   = 0.2;
-vapinp.rs    = 58.67214;			
-vapinp.rh    = 0.52;
-vapinp.ap    = 17.8636;					
-vapinp.bp    = 0.044;					
-vapinp.u2    = 329.5;					
-vapinp.tsd   = 24.2;					
-vapinp.scf   = 0.1818;					
+inp.tma   = 35.;
+inp.tmi   = 25.;
+inp.alf   = 0.2;
+inp.rs    = 58.67214;			
+inp.rh    = 0.52;
+inp.ap    = 17.8636;					
+inp.bp    = 0.044;					
+inp.u2    = 329.5;					
+inp.tsd   = 24.2;					
+inp.scf   = 0.1818;					
 
 % ##  DATASET 13F: AERODYNAMIC RESISTANCE TERM
 % ##     RAVT... (S/M) AERODYNAMIC RESISTANCE AT THE SOIL SURFACE
@@ -498,9 +460,9 @@ vapinp.scf   = 0.1818;
 % ##     SWRAT..  (-)   PARAMETER TO SWICH ON (1.D) OR OFF(0.D0) THE TEMPERATURE CHANGE ON THE SURFACE
 % ##         [RAVT]    [RAVS]   [SWRAT]
            % 206.D0     50.D0     0.D0
-vapinp.ravt   = 35.;
-vapinp.ravs   = 50.;
-vapinp.swart  = 0.;
+inp.ravt   = 35.;
+inp.ravs   = 50.;
+inp.swart  = 0.;
           
 % ##  DATASET 13G: SOIL THERMO PROPERTY TERM           
 % ##     HSC  -- HEAT SOURCE FROM ATMOSPHERE G [WATT/M2]
@@ -510,18 +472,18 @@ vapinp.swart  = 0.;
 % ##      
 % ##     [HSC]      [HER]      [ROUS]     [HCS]
       % 9.00D2        1.95D-1      2650.D0   8.75D2
-vapinp.hsc   = 900.;
-vapinp.her   = 1.95e-1;
-vapinp.rous  = 2650.;
-vapinp.hcs   = 8.75e+2
+inp.hsc   = 900.;
+inp.her   = 1.95e-1;
+inp.rous  = 2650.;
+inp.hcs   = 8.75e+2;
 
 % ##  DATASET 13H, PARAMETERS FOR THE SALT RESISTANCE
 % ##    AR  FITTING PARAMETER
 % ##    BR  FITTING PARAMETER   
 % ##          [AR]   [BR]
          % 6.9D-1  -1.04D-0
-vapinp.hsc   = 6.9e-1;
-vapinp.her   = -1.04;
+inp.ar   = 6.9e-1;
+inp.br   = -1.04;
         
 % ##  DATASET 13I SOIL CHARACTERISTIC PARAMETERS
 % ##  USING EACH PARAMETERS ARE CONTROLLED BY NREG AND LREG AT DATASET 14 AND DATASET 15
@@ -529,23 +491,21 @@ vapinp.her   = -1.04;
 % ##  ECTO--- ESSENTRICITY AND TORTUOSITY THE DEFAULT VALUE IS 0.5
 % ##  [SWRES1] [AA1]  [VN1]  [SWRES2]    [AA2]   [VN2]  [SWRES3]  [LAM3]   [PHYB3]  [SWRES4]   [LAM4]  [PHYB4]  [PHY0]   [ECTO]
       % 0.06   14.5D0  8.5D0    0.06      15.D0   9.2D0    0.09D0   8.0D0   0.2D0   0.08D0     4.2D0   0.045    5.0D4     0.5D0
-vapinp.swres1  = 0.09 
-vapinp.aa1     = 4.5   
-vapinp.vn1     = 12.
-vapinp.swres2  = 0.
-vapinp.aa2     = 0.
-vapinp.vn2     = 0.
-vapinp.swres3  = 0.
-vapinp.lam3    = 0.
-vapinp.phyb3   = 0.
-vapinp.swres4  = 0.
-vapinp.lam4    = 0.
-vapinp.phyb4   = 0.
-vapinp.phy0    = 5.e+4
-vapinp.ecto	   = 0.5
-	  
-	  
-% ##  
+inp.swres1  = 0.09; 
+inp.aa1     = 4.5;   
+inp.vn1     = 12.0;
+inp.swres2  = 0.;
+inp.aa2     = 0.;
+inp.vn2     = 0.;
+inp.swres3  = 0.;
+inp.lam3    = 0.;
+inp.phyb3   = 0.;
+inp.swres4  = 0.;
+inp.lam4    = 0.;
+inp.phyb4   = 0.;
+inp.phy0    = 5.e+4;
+inp.ecto	   = 0.5;
+
 % ##  DATASET 13J: THERMAL CONDUCTIVITIES OF WATER AND LIQUID
 % ##   NTC -- TYPE OF (T)HERMAL (C)ONDUCTIVITIES EQUATION: 
 % ##              NTC=1, USING EQUATIONS FROM SUTRA MANUAL, THEN [TCS] AND [TCL] HAS TO BE INPUT 
@@ -557,12 +517,11 @@ vapinp.ecto	   = 0.5
 % ##
 % ##  [NTC]      [B1]      [B2]        [B3]
       % 2        1.528       -2.406      4.909
-vapinp.ntc    = 2.
-vapinp.b1     = 1.528
-vapinp.b2     = -2.406
-vapinp.b3	  = 4.909	  
-	  
-% ##
+inp.ntc    = 2.;
+inp.b1     = 1.528;
+inp.b2     = -2.406;
+inp.b3	   = 4.909;	  
+
 % ##  DATASET 13K ENHANCEMENT FACTOR
 % ##  SEE CASS (1984) AND SAITO (2006) FOR DETAIL
 % ##  SUGGESTED PARAMETERS ARE YA-9.5, YB-3.0, YC-2.6, YD-1.0, YE-4.0,FC--0.001
@@ -573,15 +532,14 @@ vapinp.b3	  = 4.909
 % ##            =2, APPLY ENHANCEMENT FACTOR TO ALL OF THE TERMS
 % ##  [NEF]     [YA]   [YB]    [YC]   [YD]   [YE]   [FC]
       % 0       9.5D0  3.0D0   2.6D0  1.0D0 4.0D0  1.D-3
-vapinp.nef    = 0.
-vapinp.ya     = 9.5
-vapinp.yb     = 3.0
-vapinp.yc	  = 2.6	  
-vapinp.yd     = 1.0
-vapinp.ye     = 4.0
-vapinp.fc     = 1.e-3
+inp.nef    = 0.;
+inp.ya     = 9.5;
+inp.yb     = 3.0;
+inp.yc	   = 2.6	 ; 
+inp.yd     = 1.0;
+inp.ye     = 4.0;
+inp.fc     = 1.e-3;
 	  
-% ##
 % ## DATASET 13L PARAMETERS FOR SURFACE RESISTANCE
 % ## SEE PAGE 142BLUEBOOK, 98(5) FOR REFERENCE
 % ## [TAL]  --  THICKNESS OF AIR LAYER (M) [TAL]
@@ -590,11 +548,11 @@ vapinp.fc     = 1.e-3
 % ## [ETR]  --  RESIDUAL EVAPORATION RATE [-] [ETR]
 % ##  [TAL]   [EC]   [ETR]     [PSIP]      [CORS]
      % 0.3D-3   5.D-1   1.D0    1000.D0      1.D0
-vapinp.tal    = 0.3e-3
-vapinp.ec     = 0.5
-vapinp.etr    = 1.
-vapinp.psip	  = 1000.	  
-vapinp.cors   = 1.0	 
+inp.tal    = 0.3e-3;
+inp.ec     = 0.5;
+inp.etr    = 1.;
+inp.psip   = 1000.;	  
+inp.cors   = 1.0	 ;
 	 
 % ## DATASET 13M FILM TRANSPORT ALGORITHM 
 % ##   THIS ARGORITHM IS BASED ON ZHANG (2010) AND TOKUNAGA (2009)
@@ -606,199 +564,151 @@ vapinp.cors   = 1.0
 % ##   [ASVL] -- HAMAKER CONSTANT. IT IS SUGGESTED BY TULLER AND OR THAT THIS CONSTANT EQUALS TO -6E-20
 % ##    [CORF]             [AGR]     [PHICM]      [ASVL]
         % 1.D0             0.00035      1.E3       -6.0E-20
-vapinp.corf    = 1.0
-vapinp.agr     = 3.5e-4
-vapinp.phicm   = 1000.
-vapinp.asvl	   = -6.0e-20	
+inp.corf    = 1.0;
+inp.agr     = 3.5e-4;
+inp.phicm   = 1000.;
+inp.asvl    = -6.0e-20	;
 
-
-%##  DATASET 14:  NODEWISE DATA
-%%##                              [SCALX] [SCALY] [SCALZ] [PORFAC]
-vapinp.scalx  = 1.;
-vapinp.scaly  = 1.;
-vapinp.scalz  = 1.;
-vapinp.porfac = 1.;
+%% ##  DATASET 14:  NODEWISE DATA
+%##                              [SCALX] [SCALY] [SCALZ] [PORFAC]
+inp.scalx  = 1.;
+inp.scaly  = 1.;
+inp.scalz  = 1.;
+inp.porfac = 1.;
 
 %##      [II]    [NRE    G(II)]  [X(II)] [Y(II)] [Z(II)] [POR(II)]
-%vapinp.ii   = (1:nn)';
-vapinp.nreg = zeros(nn,1)+1;
-vapinp.x    = x_nod_array;
-vapinp.y    = y_nod_array;
-%vapinp.z    = zeros(nn,1)+dz;
-vapinp.z    = 2*pi*vapinp.x+0.1;
-vapinp.por  = zeros(nn,1)+0.43;
+inp.ii   = (1:nn)';
+inp.nreg = zeros(nn,1)+1;
+inp.x    = x_nod_array;
+inp.y    = y_nod_array;
+inp.z    = zeros(nn,1)+dz;
+inp.por  = zeros(nn,1)+porosity;
 
-
-%##                              [PMAXFA]        [PMINFA]        [ANG1FA]        [ALMAXF]        [ALMINF]        [ATMAXF]        [ATMINF]
-%'ELEMENT'               1.0000000D+00   1.0000000D+00   1.0000000D+00   2 2 2 2
+%% ##  DATASET 15:  ELEMENTWISE DATA
+%##             [PMAXFA]        [PMINFA]        [ANG1FA]        [ALMAXF]        [ALMINF]        [ATMAXF]        [ATMINF]
+%'ELEMENT'     1.0000000D+00   1.0000000D+00   1.0000000D+00       1               1                1               1
+inp.pmaxfa = 1.;
+inp.pminfa = 1.;
+inp.angfac = 1.;
+inp.almaxf = 1.;
+inp.alminf = 1.;
+inp.atmaxf = 1.;
+inp.atminf = 1.;
 %##     [L]      [LREG(L)]       [PMAX(L)]       [PMIN(L)]       [ANGLEX(L)]     [ALMAX(L)]      [ALMIN(L)]      [ATMAX(L)]      [ATMIN(L)]
-vapinp.pmaxfa = 1.;
-vapinp.pminfa = 1.;
-vapinp.angfac = 1.;
-vapinp.almaxf = 1.;
-vapinp.alminf = 1.;
-vapinp.atmaxf = 1.;
-vapinp.atminf = 1.;
-%vapinp.l      = (1:ne)';
-vapinp.lreg   = zeros(ne,1)+1;
 
-
-pmax_mtx_gravity_compensated_m2= zeros(size(x_ele_mtx_gravity_compensated_m)) + permeability_sand_m2 ;   %background permeability
-
-mask_ele_mtx_silt_layer_gravity_compensated = y_ele_mtx_gravity_compensated_m  > -6  ;   % mask matrix, for element matrix 
-
-%pmax_mtx_gravity_compensated_m2 (mask_ele_mtx_silt_layer_gravity_compensated) =  permeability_silt_m2;   % silt layer permeability
-
-pmax_mtx_m2=flip(pmax_mtx_gravity_compensated_m2);
-
-pmax_array_m2 = pmax_mtx_m2(:);
-
-
-
-vapinp.pmax   = pmax_array_m2;
-vapinp.pmin   = pmax_array_m2;
-vapinp.anglex = zeros(ne,1);
-vapinp.almax  = zeros(ne,1)+0.5e-0;
-vapinp.almin  = zeros(ne,1)+0.5e-0;
-vapinp.atmax  = zeros(ne,1)+0.5e-0;
-vapinp.atmin  = zeros(ne,1)+0.5e-0;
+inp.l       =(1:ne)';
+inp.lreg    =zeros(ne,1)+1;
+inp.pmax    =zeros(ne,1)+1.16e-11;
+inp.pmin    =zeros(ne,1)+1.16e-11;
+inp.anglex  =zeros(ne,1);
+inp.almax   =zeros(ne,1)+0.01;
+inp.almin   =zeros(ne,1)+0.01;
+inp.atmax   =zeros(ne,1)+0.01;
+inp.atmin   =zeros(ne,1)+0.01;
 
 % note: for SUTRASET when node number is negative, the second input is surface area of the node
 % and the third input is the thickness of the cell.
 
 %% DATASET 17   Data for Fluid Source and Sinks
 
-%vapinp.iqcp  = iqcp;
-%vapinp.qinc  = qinc;
-%vapinp.uinc  = uinc;
+inp.iqcp  = iqcp;
+inp.qinc  = qinc;
+inp.uinc  = uinc;
 
 
-% ## DATASET 19:  Data for Specified Pressure Nodes
+% DATASET 19:  Data for Specified Pressure Nodes
 %###  [IPBC]                [PBC]                [UBC]
 
-mask_nod_mtx_aquifer_boundary_gravity_compensated = and(y_nod_mtx_gravity_compensated_m<-4, x_nod_mtx_gravity_compensated_m>99.99);  % below 4 metre, greater than 200 m away from the centre
-ipbc_node_idx_array                           = node_index_mtx_gravity_compensated(mask_nod_mtx_aquifer_boundary_gravity_compensated);
-pbc                                           = -(y_nod_mtx_gravity_compensated_m(mask_nod_mtx_aquifer_boundary_gravity_compensated) - initial_head_aquifer_m ) *c.g * (vapinp.rhow0 + vapinp.drwdu * c_saltwater_kgPkg);
+bottom_nodes                = node_index_mtx_gravity_compensated(ny,:)';  % below 4 metre, greater than 200 m away from the centre
+pbc(1:nx)                   = water_table_m*c.rhow_pure_water*c.g;
+ubc(1:nx)                   = c_saltwater_kgPkg;
 
-
+inp.ipbc = bottom_nodes;
+inp.pbc  = pbc';
+inp.ubc  = ubc';
+inp.npbc = length(inp.pbc);
 
 %mask_mtx_aquifer_boundary_gravity_compensated_left = and(y_nod_mtx_gravity_compensated_m<-4, x_nod_mtx_gravity_compensated_m<0.01);
 %ipbc_node_idx_array_left                           = node_index_mtx_gravity_compensated(mask_mtx_aquifer_boundary_gravity_compensated_left);
-%pbc_left                                      = -(y_nod_mtx_gravity_compensated_m(mask_mtx_aquifer_boundary_gravity_compensated) - initial_head_aquifer_m +0.5 ) *c.g * vapinp.rhow0 ;
+%pbc_left                                      = -(y_nod_mtx_gravity_compensated_m(mask_mtx_aquifer_boundary_gravity_compensated) - initial_head_aquifer_m +0.5 ) *c.g * inp.rhow0 ;
 %
-%vapinp.ipbc = [ipbc_node_idx_array; ipbc_node_idx_array_left];
-%vapinp.pbc  = [pbc;pbc_left];
-%vapinp.ubc  = [zeros(size(pbc))+c_saltwater_kgPkg;zeros(size(pbc_left))+c_freshwater_kgPkg];
-%vapinp.npbc = length(vapinp.pbc);
-
-
-
-mask_nod_mtx_aquifer_boundary_gravity_compensated_top = and(y_nod_mtx_gravity_compensated_m>-0.1, x_nod_mtx_gravity_compensated_m<pond_radius_m);
-ipbc_node_idx_array_top                           = node_index_mtx_gravity_compensated(mask_nod_mtx_aquifer_boundary_gravity_compensated_top);
-pbc_top                                      = zeros(size(ipbc_node_idx_array_top));
-
-%vapinp.ipbc = [ipbc_node_idx_array; ipbc_node_idx_array_top];
-%vapinp.pbc  = [pbc;pbc_top];
-%vapinp.ubc  = [zeros(size(pbc))+c_saltwater_kgPkg;zeros(size(pbc_top))+c_freshwater_kgPkg];
-%vapinp.npbc = length(vapinp.pbc);
-
-
-
-vapinp.ipbc = ipbc_node_idx_array;
-vapinp.pbc  = pbc;
-vapinp.ubc  = zeros(size(pbc))+c_saltwater_kgPkg;
-vapinp.npbc = length(vapinp.pbc);
-
+%inp.ipbc = [ipbc_node_idx_array; ipbc_node_idx_array_left];
+%inp.pbc  = [pbc;pbc_left];
+%inp.ubc  = [zeros(size(pbc))+c_saltwater_kgPkg;zeros(size(pbc_left))+c_freshwater_kgPkg];
+%inp.npbc = length(inp.pbc);
 
 %##
 %##  DATASET     22:  Ele        ment Incid      ence Data
 %##    [LL]      [IIN(1)]        [IIN(2)]        [IIN(3)]        [IIN(4)]
 
 %ne_mtx=reshape(l,ney,nex);
-vapinp.iin1 = zeros(vapinp.ne,1);
-vapinp.iin2 = zeros(vapinp.ne,1);
-vapinp.iin3 = zeros(vapinp.ne,1);
-vapinp.iin4 = zeros(vapinp.ne,1);
+inp.iin1 = zeros(inp.ne,1);
+inp.iin2 = zeros(inp.ne,1);
+inp.iin3 = zeros(inp.ne,1);
+inp.iin4 = zeros(inp.ne,1);
 
 % DATASET 22, user need to check if the sequence of the node is in clockwise manner as suggested by the manual
 
-%for j  = 1:nex
-%    for i = 1:ney
-%        vapinp.iin1(idx) = node_index_mtx(i,j);
-%        vapinp.iin2(idx) = node_index_mtx(i,j+1);
-%        vapinp.iin3(idx) = node_index_mtx(i+1,j+1);
-%        vapinp.iin4(idx) = node_index_mtx(i+1,j);
-%        idx           = idx+1;
-%    end
-%end
+inp.iin1= iin1;
+inp.iin2= iin2;
+inp.iin3= iin3;
+inp.iin4= iin4;
 
+inp.export_to_file();
 
-vapinp.iin1= iin1;
-vapinp.iin2= iin2;
-vapinp.iin3= iin3;
-vapinp.iin4= iin4;
+%% ICS FILE
 
-%vapinp.export_to_file();
 
 
 % setting the initial pressure as hydrostatic, in particular at the sandy aquifer, the silt layer will be overwritten
-pm1_mtx_gravity_compensated_pa= - (- initial_head_aquifer_m + y_nod_mtx_gravity_compensated_m)*c.g*c.rhow_pure_water;
+% pm1_mtx_gravity_compensated_pa= - (- initial_head_aquifer_m + y_nod_mtx_gravity_compensated_m)*c.g*c.rhow_pure_water;
 
 
-mask_nod_mtx_silt_layer_gravity_compensated = y_nod_mtx_gravity_compensated_m  > -6  ;   % mask matrix, for nod matrix 
+% mask_nod_mtx_silt_layer_gravity_compensated = y_nod_mtx_gravity_compensated_m  > -6  ;   % mask matrix, for nod matrix 
 
 %set a relatively high suction in the silt layer
-pm1_mtx_gravity_compensated_pa ( mask_nod_mtx_silt_layer_gravity_compensated) = -20000;
-
-
-
+% pm1_mtx_gravity_compensated_pa ( mask_nod_mtx_silt_layer_gravity_compensated) = -20000;
 
 % put the top cell as zero pressure 
-%pm1_mtx_gravity_compensated_pa(mask_nod_mtx_aquifer_boundary_gravity_compensated_top)=initial_pond_water_depth_m*c.rhow_pure_water*c.g;
-
-pm1_mtx_pa=flip(pm1_mtx_gravity_compensated_pa);
+% pm1_mtx_gravity_compensated_pa(mask_nod_mtx_aquifer_boundary_gravity_compensated_top)=initial_pond_water_depth_m*c.rhow_pure_water*c.g;
+% pm1_mtx_pa=flip(pm1_mtx_gravity_compensated_pa);
 
 
 % initial solute concentrtion, sandy aquifer has a saline concentration while silt has a fresh concentration
-um1_mtx_gravity_compensated_kgPkg= zeros(size(pm1_mtx_gravity_compensated_pa))+ c_saltwater_kgPkg;
-
-
-
-um1_mtx_gravity_compensated_kgPkg (mask_nod_mtx_silt_layer_gravity_compensated) = c_freshwater_kgPkg;
-
-
-um1_mtx_kgPkg=flip(um1_mtx_gravity_compensated_kgPkg);
-
-
-
+% um1_mtx_gravity_compensated_kgPkg= zeros(size(pm1_mtx_gravity_compensated_pa))+ c_saltwater_kgPkg;
+% um1_mtx_gravity_compensated_kgPkg (mask_nod_mtx_silt_layer_gravity_compensated) = c_freshwater_kgPkg;
+% um1_mtx_kgPkg=flip(um1_mtx_gravity_compensated_kgPkg);
 
 
 fprintf('use the original ics file')
 % ics file
-ics       = icsObj('PART1','read_from_file','no');
-ics.tics  = 0;
+ics       = icsObj('FLUME','read_from_file','no');
+ics.tics  = 0.0;
 %ics.cpuni = 'UNIFORM';
 %ics.pm1   = -30;
-ics.cpuni = 'NONUNIFORM';
-ics.pm1   = pm1_mtx_pa(:);
-ics.cuuni = 'NONUNIFORM';
-ics.um1   = um1_mtx_kgPkg ;
+ics.cpuni = 'UNIFORM';
+ics.pm1   = 10;
+ics.cuuni = 'UNIFORM';
+ics.um1   = initial_concentration_kgPkg ;
+ics.ctuni = 'UNIFORM';
+ics.tm1   = initial_temperature_C + 273.15 ;
+
 ics.export_to_file();
 %
 %
-%%pm1_mtx=reshape(b.pm1,[vapinp.nn1,vapinp.nn2]);
+%%pm1_mtx=reshape(b.pm1,[inp.nn1,inp.nn2]);
 %%
-%%b=icsObj('PART1_cs.csv','inpObj',vapinp);
-%%pm1_mtx=reshape(b.pm1,[vapinp.nn1,vapinp.nn2]);
-%%um1_mtx=reshape(b.um1,[vapinp.nn1,vapinp.nn2]);
-%%vapinp.get_x_nod_mtx;
-%%vapinp.get_y_nod_mtx;
+%%b=icsObj('PART1_cs.csv','inpObj',inp);
+%%pm1_mtx=reshape(b.pm1,[inp.nn1,inp.nn2]);
+%%um1_mtx=reshape(b.um1,[inp.nn1,inp.nn2]);
+%%inp.get_x_nod_mtx;
+%%inp.get_y_nod_mtx;
 %%a=figure;
-%%surf(vapinp.x_nod_mtx,vapinp.y_nod_mtx,um1_mtx);
+%%surf(inp.x_nod_mtx,inp.y_nod_mtx,um1_mtx);
 %%savefig(a,'conc.fig');
 %%
 %%a=figure;
-%%surf(vapinp.x_nod_mtx,vapinp.y_nod_mtx,pm1_mtx);
+%%surf(inp.x_nod_mtx,inp.y_nod_mtx,pm1_mtx);
 %%savefig(a,'p.fig');
 %%
 %%saveas(a,'Barchart.png')
