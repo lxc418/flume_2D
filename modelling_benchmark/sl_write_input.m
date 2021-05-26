@@ -27,16 +27,17 @@ fil.export_to_file();
 %soil properties 
 porosity                    = 0.39;
 c_saltwater_kgPkg           = 0.035;
-c_freshwater_kgPkg          = 0.0001;
-water_table_m               = 0.1;
+% c_freshwater_kgPkg          = 0.0001;
+water_table_m               = 0.2;
+
 initial_temperature_C       = 25;
 initial_concentration_kgPkg = 0.035;
-initial_pond_water_depth_m  = 0.5;
-permeability_silt_m2        = 5.38e-15;
+initial_head_aquifer_m      = 0.2;
 permeability_sand_m2        = 5.67e-11;
-pond_radius_m               = 50.1;
 
-%% inp file
+time_scale=10; 
+time_cycle=100000; %around 20 days
+%% input for meshing 
 x1 = 0;
 x2 = 1.2;
 nex = 60; %Number of segments along x
@@ -62,7 +63,7 @@ y(4,2)=0.3;
 
 dz=0.01;
 
-%% process coordinate of nodes
+%% process coordinate of nodes for dateset14
 ney     =sum(ney_section);
 nx      =nex+1;
 ny      =ney+1;
@@ -241,8 +242,8 @@ inp.nucyc = 1;
 inp.schnam = 'TIME_STEPS';
 inp.schtyp = 'TIME CYCLE';
 inp.creft  = 'ELAPSED';
-inp.scalt  = 10.; 
-inp.ntmax  = 170000; %around 20 days
+inp.scalt  = time_scale; 
+inp.ntmax  = time_cycle; %around 20 days
 inp.timei  = 0;
 inp.timel  = 1.e99;
 inp.timec  = 1.;
@@ -661,7 +662,7 @@ inp.export_to_file();
 
 
 % setting the initial pressure as hydrostatic, in particular at the sandy aquifer, the silt layer will be overwritten
-% pm1_mtx_gravity_compensated_pa= - (- initial_head_aquifer_m + y_nod_mtx_gravity_compensated_m)*c.g*c.rhow_pure_water;
+pm1_mtx_gravity_pa= - (- initial_head_aquifer_m + y_nod_mtx)*c.g*c.rhow_pure_water;
 
 
 % mask_nod_mtx_silt_layer_gravity_compensated = y_nod_mtx_gravity_compensated_m  > -6  ;   % mask matrix, for nod matrix 
@@ -684,10 +685,10 @@ fprintf('use the original ics file')
 % ics file
 ics       = icsObj('FLUME','read_from_file','no');
 ics.tics  = 0.0;
-%ics.cpuni = 'UNIFORM';
-%ics.pm1   = -30;
-ics.cpuni = 'UNIFORM';
-ics.pm1   = 10;
+ics.cpuni = 'NONUNIFORM';
+ics.pm1   = pm1_mtx_gravity_pa;
+% ics.cpuni = 'UNIFORM';
+% ics.pm1   = 10;
 ics.cuuni = 'UNIFORM';
 ics.um1   = initial_concentration_kgPkg ;
 ics.ctuni = 'UNIFORM';
