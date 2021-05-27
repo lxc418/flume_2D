@@ -36,7 +36,8 @@ initial_head_aquifer_m      = 0.3;
 permeability_sand_m2        = 5.67e-11;
 
 time_scale=10; 
-time_cycle=100000; %around 20 days
+time_cycle=100000; %around 6 days
+diffusivity=1e-9;
 %% input for meshing 
 x1 = 0;
 x2 = 1.2;
@@ -311,7 +312,7 @@ inp.cinact = 'Y';
 %         0.0                1.         3.890D-10         1.0E+3             0.     7.0224E+02         1.0E-3
 inp.compfl = 1.e-11;
 inp.cw     = 1.;
-inp.sigmaw = 1.e-9;
+inp.sigmaw = diffusivity;
 inp.rhow0  = 1000;
 inp.urhow0 = 0.;
 inp.drwdu  = 700.;
@@ -330,7 +331,7 @@ inp.rhos   = 2600.;   %solid density of sodium chloride
 %'FREUNDLICH' 1.D-47 0.05  #less rigid
 
 inp.adsmod = 'FREUNDLICH';
-% inp.adsmod = 'NONE';
+%inp.adsmod = 'NONE';
 inp.chi1   = 2.e-47;
 inp.chi2   = 0.05 ;
 
@@ -444,7 +445,7 @@ inp.ite    = 1;
 % ##              SEE PAGE
 % ##         [TMA]       [TMI]      [ALF]        [RS]        [RH]        [AP]        [BP]       [U2]       [TSD]    [SCF]
             % 25.D0      25.0       0.2       58.67214    0.52     17.8636        0.044     329.5       24.2D0      0.1818
-inp.tma   = 35.;
+inp.tma   = 25.;
 inp.tmi   = 25.;
 inp.alf   = 0.2;
 inp.rs    = 58.67214;			
@@ -461,7 +462,7 @@ inp.scf   = 0.1818;
 % ##     SWRAT..  (-)   PARAMETER TO SWICH ON (1.D) OR OFF(0.D0) THE TEMPERATURE CHANGE ON THE SURFACE
 % ##         [RAVT]    [RAVS]   [SWRAT]
            % 206.D0     50.D0     0.D0
-inp.ravt   = 35.;
+inp.ravt   = 85.;
 inp.ravs   = 50.;
 inp.swart  = 0.;
           
@@ -492,9 +493,9 @@ inp.br   = -1.04;
 % ##  ECTO--- ESSENTRICITY AND TORTUOSITY THE DEFAULT VALUE IS 0.5
 % ##  [SWRES1] [AA1]  [VN1]  [SWRES2]    [AA2]   [VN2]  [SWRES3]  [LAM3]   [PHYB3]  [SWRES4]   [LAM4]  [PHYB4]  [PHY0]   [ECTO]
       % 0.06   14.5D0  8.5D0    0.06      15.D0   9.2D0    0.09D0   8.0D0   0.2D0   0.08D0     4.2D0   0.045    5.0D4     0.5D0
-inp.swres1  = 0.09; 
+inp.swres1  = 0.06; 
 inp.aa1     = 4.5;   
-inp.vn1     = 12.0;
+inp.vn1     = 8.5;
 inp.swres2  = 0.;
 inp.aa2     = 0.;
 inp.vn2     = 0.;
@@ -505,7 +506,7 @@ inp.swres4  = 0.;
 inp.lam4    = 0.;
 inp.phyb4   = 0.;
 inp.phy0    = 5.e+4;
-inp.ecto	   = 0.5;
+inp.ecto	= 0.5;
 
 % ##  DATASET 13J: THERMAL CONDUCTIVITIES OF WATER AND LIQUID
 % ##   NTC -- TYPE OF (T)HERMAL (C)ONDUCTIVITIES EQUATION: 
@@ -550,7 +551,7 @@ inp.fc     = 1.e-3;
 % ##  [TAL]   [EC]   [ETR]     [PSIP]      [CORS]
      % 0.3D-3   5.D-1   1.D0    1000.D0      1.D0
 inp.tal    = 0.3e-3;
-inp.ec     = 0.5;
+inp.ec     = 0.0;
 inp.etr    = 1.;
 inp.psip   = 1000.;	  
 inp.cors   = 1.0	 ;
@@ -685,10 +686,10 @@ fprintf('use the original ics file')
 % ics file
 ics       = icsObj('FLUME','read_from_file','no');
 ics.tics  = 0.0;
-ics.cpuni = 'NONUNIFORM';
-ics.pm1   = pm1_mtx_gravity_pa;
-% ics.cpuni = 'UNIFORM';
-% ics.pm1   = 10;
+%ics.cpuni = 'NONUNIFORM';
+%ics.pm1   = pm1_mtx_gravity_pa;
+ics.cpuni = 'UNIFORM';
+ics.pm1   = 10;
 ics.cuuni = 'UNIFORM';
 ics.um1   = initial_concentration_kgPkg ;
 ics.ctuni = 'UNIFORM';
