@@ -28,11 +28,11 @@ fil.export_to_file();
 porosity                    = 0.39;
 c_saltwater_kgPkg           = 0.035;
 % c_freshwater_kgPkg          = 0.0001;
-water_table_m               = 0.2;
+water_table_m               = 0.25;
 
 initial_temperature_C       = 25;
 initial_concentration_kgPkg = 0.035;
-initial_head_aquifer_m      = 0.2;
+initial_head_aquifer_m      = 0.3;
 permeability_sand_m2        = 5.67e-11;
 
 time_scale=10; 
@@ -221,8 +221,8 @@ inp.nobs = 0;
 
 %##  DATASET 4:  Simulation Mode Options
 inp.cunsat = 'UNSATURATED';
-inp.cssflo = 'TRANSIENT FLOW';
-inp.csstra = 'TRANSIENT TRANSPORT';
+inp.cssflo = 'TRANSIENT';
+inp.csstra = 'TRANSIENT';
 inp.cread  = 'COLD' ;
 inp.istore = 9999;
 
@@ -329,9 +329,9 @@ inp.rhos   = 2600.;   %solid density of sodium chloride
 %#'NONE'
 %'FREUNDLICH' 1.D-47 0.05  #less rigid
 
-%inp.adsmod = 'FREUNDLICH';
-inp.adsmod = 'NONE';
-inp.chi1   = 1.e-46;
+inp.adsmod = 'FREUNDLICH';
+% inp.adsmod = 'NONE';
+inp.chi1   = 2.e-47;
 inp.chi2   = 0.05 ;
 
 %##  DATASET 12:  Production of Energy or Solute Mass
