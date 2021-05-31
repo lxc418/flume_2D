@@ -1,2 +1,2 @@
 sl_read;
-sl_analyze;
+sl_figure;

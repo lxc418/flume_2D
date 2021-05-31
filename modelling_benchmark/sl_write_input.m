@@ -294,7 +294,7 @@ inp.cpause = 'Y';
 %     1000         1000       1000      1000       'Y'
 %##
 
-inp.ncolpr = -100;
+inp.ncolpr = 100;
 %inp.ncol  = 'N'  'X'  'Y'  'P'  'U'  'S'  '-';
 inp.ncol   = {['N'],['X' ],[ 'Y'  ],['P' ],[ 'U' ],[ 'S' ],[ '-']};
 
@@ -494,7 +494,7 @@ inp.br   = -1.04;
 % ##  [SWRES1] [AA1]  [VN1]  [SWRES2]    [AA2]   [VN2]  [SWRES3]  [LAM3]   [PHYB3]  [SWRES4]   [LAM4]  [PHYB4]  [PHY0]   [ECTO]
       % 0.06   14.5D0  8.5D0    0.06      15.D0   9.2D0    0.09D0   8.0D0   0.2D0   0.08D0     4.2D0   0.045    5.0D4     0.5D0
 inp.swres1  = 0.06; 
-inp.aa1     = 4.5;   
+inp.aa1     = 14.5;   
 inp.vn1     = 8.5;
 inp.swres2  = 0.;
 inp.aa2     = 0.;
@@ -600,8 +600,8 @@ inp.atminf = 1.;
 
 inp.l       =(1:ne)';
 inp.lreg    =zeros(ne,1)+1;
-inp.pmax    =zeros(ne,1)+1.16e-11;
-inp.pmin    =zeros(ne,1)+1.16e-11;
+inp.pmax    =zeros(ne,1)+permeability_sand_m2;
+inp.pmin    =zeros(ne,1)+permeability_sand_m2;
 inp.anglex  =zeros(ne,1);
 inp.almax   =zeros(ne,1)+0.01;
 inp.almin   =zeros(ne,1)+0.01;
