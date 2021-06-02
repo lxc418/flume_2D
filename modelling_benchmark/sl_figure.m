@@ -2,7 +2,7 @@ clear
 load plot.mat
 
 et1_kgs   = -arrayfun(@(y) y.qin(1),bcof);
-area1     = 1e-2*2e-2; % hard coding
+area1     = 1e-2; % hard coding
 et1_mmday = et1_kgs/area1*86400;
 time_day  = [bcof.tout]/3600/24;
 time_nod_day= arrayfun(@(y) y.tout,nod) * c.dayPsec;
@@ -39,7 +39,7 @@ for nt=1:round((length(nod)-1)/50):length(nod)-1
     number_of_negative_c=sum(nod(nt).terms{c_idx}<0);
     [max_c,max_c_idx]=max(nod(nt).terms{c_idx});
     fprintf('    max concentration is %f at location  %i, x= %f , y= %f \n',max_c,max_c_idx,  x_nod_mtx(max_c_idx),  y_nod_mtx(max_c_idx));
-    if number_of_negative_c>0;
+    if number_of_negative_c>0
           fprintf('    %i negative concentration\n', length(number_of_negative_c));
     end
 

@@ -38,16 +38,18 @@ permeability_sand_m2        = 5.67e-11;
 time_scale=10; 
 time_cycle=100000; %around 6 days
 diffusivity=1e-9;
-%% input for meshing 
-x1 = 0;
-x2 = 1.2;
-nex = 60; %Number of segments along x
 
+%% input for meshing 
+BLOCK = 1; %input block number (every block must be a quadrilateral and the left and right side
+%								should be parallel to the y axis)
+x1  = 0;
+x2  = 1.2;
+nex = 120; %Number of segments along x
 
 y(1,1)=0;
 y(1,2)=0;
 
-ney_section(1)=10;
+ney_section(1)=10; %Number of segments between y1 and y2, must be consistente in every block
 
 y(2,1)=0.2;
 y(2,2)=0.1;
@@ -62,43 +64,38 @@ ney_section(3)=30;
 y(4,1)=0.4;
 y(4,2)=0.3;
 
-dz=0.01;
+dz=0.01; %default
 
-%% process coordinate of nodes for dateset14
-ney     =sum(ney_section);
-nx      =nex+1;
-ny      =ney+1;
-
-x_array = x1:(x2-x1)/nex:x2;
-y_keyline = size (y,1); %control lines in height
-
-for i=1:y_keyline
-
-	y_key_interval=(y(i,2)-y(i,1))/nex;
-
-	if y_key_interval==0
-		y_array(i,1:nx) = y(i,1);
-	else
-		y_array(i,1:nx) = y(i,1):y_key_interval:y(i,2);
-	end
-
-end
-
-for i=1:nx
-
-        x_nod_mtx ( (i-1)*ny+1: i*ny )= x_array(i);
-
-	for j=1:y_keyline-1
-        
-        y_interval (j,i) = (y_array(j+1,i)-y_array(j,i))./ney_section(j);      
-        y_location (1)   = 0;
-        y_location (j+1) = sum(ney_section(1:j));
-                
-        y_nod_mtx ( ney*(i-1)+i + y_location(j):ney*(i-1)+i + y_location (j+1) )= y_array(j,i): y_interval(j,i) : y_array(j+1,i) ; 
-    end
-    
-	
-end
+mesh %mesh must be called in every block
+%%
+% %BLOCK 2
+% BLOCK = 2;
+% 
+% x1 = 250;
+% x2 = 260;
+% nex = 10; %Number of segments along x
+% 
+% 
+% y(1,1)=-5;
+% y(1,2)=-5;
+% 
+% ney_section(1)=20;
+% 
+% y(2,1)=-1;
+% y(2,2)=-2;
+% 
+% ney_section(2)=30;
+% 
+% y(3,1)=0.4;
+% y(3,2)=-1.5;
+% 
+% ney_section(3)=50;
+% 
+% y(4,1)=0.9;
+% y(4,2)=-0.8;
+% 
+% dz=0.01;
+% mesh
 %%
 nn       =  nx*ny;
 ne       =  nex*ney;
@@ -167,11 +164,9 @@ y_ele_mtx_gravity_compensated_m = flip(y_ele_mtx_m);
 %               vapor flow not only occurs on the surface. qinc and uinc
 %               are row and column where the node is located, respectively.
 iqcp = -reshape(node_index_mtx_gravity_compensated',nn,1) ; % top cell,negative means evaporation is included
-qinc= mod(-iqcp,nx);
-qinc(find(~-qinc))= nx;
-qinc=nx+1-qinc;
-uinc = (-iqcp + qinc-1)./nx;   % evaporating water concentration
-
+qinc=ny+1-mod(-iqcp,ny);
+qinc(qinc>ny)=1;			   
+uinc = (-iqcp + qinc-1)./ny;  
 
 
 
@@ -551,7 +546,7 @@ inp.fc     = 1.e-3;
 % ##  [TAL]   [EC]   [ETR]     [PSIP]      [CORS]
      % 0.3D-3   5.D-1   1.D0    1000.D0      1.D0
 inp.tal    = 0.3e-3;
-inp.ec     = 0.0;
+inp.ec     = 0.5;
 inp.etr    = 1.;
 inp.psip   = 1000.;	  
 inp.cors   = 1.0	 ;
