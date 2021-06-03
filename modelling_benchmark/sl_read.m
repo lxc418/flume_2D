@@ -1,7 +1,7 @@
 %clear all
 %close all
 % project name
-name='Column';
+name='FLUME';
 
 % read input files
 %inp=i0('desaline');
@@ -24,3 +24,4 @@ vx_idx = strcmp(ele(1).label,'X velocity');
 yele_idx = strcmp(ele(1).label,'Y origin');
 
 %readlabdata;
+save('plot.mat','-v7.3') 
