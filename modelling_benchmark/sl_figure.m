@@ -1,11 +1,12 @@
-% clear
-% load plot.mat
+clear
+load plot.mat
 fclose('all');
 c=ConstantObj();
 
 time_step = length(bcof);
 time_day  = [bcof.tout]/3600/24;%second to day
-time_nod_day= arrayfun(@(y) y.tout,nod) * c.dayPsec;
+time_nod_day = arrayfun(@(y) y.tout,nod) * c.dayPsec;
+water_table  = inp.pbc/9800;
 
 x_matrix = reshape(nod(1).terms{x_idx},[inp.nn1,inp.nn2]);%inp.nn2 is number of nodes in y direction 
 y_matrix = reshape(nod(1).terms{y_idx},[inp.nn1,inp.nn2]);
@@ -37,6 +38,7 @@ for i=2:time_step
     cumulative_evapo_mm(i) =  total_evapo_mmday(i)*inp.scalt*inp.nbcfpr*c.dayPsec + cumulative_evapo_mm(i-1);
 end
 
+   
 
 %% plot control
 fig_pos.left   = 0.05;
@@ -45,8 +47,7 @@ fig_pos.length = 0.35;
 fig_pos.height = 0.26;
 
 %nt=10;
-%a.fig=figure;
-a.fs = 10;
+a.fs = 15;
 a.lw = 2; %line width
 a.cz = 8; %the size of the marker
 fs   = 2; % sampling frequency
@@ -55,8 +56,9 @@ fs   = 2; % sampling frequency
 qt = 100;
 %A number from 0 through 100. Higher quality numbers result in higher video quality and larger file sizes
 a.fig = figure;
-set (gcf,'Position',[0,0,1600,1200]);
+set (gcf,'Position',[0,0,1920,1080]); %resolution 1080p
 % set(gcf,'Units','normalized', 'OuterPosition',[0 0 1 1]);  % maximize the plotting figure
+
 mov           =  VideoWriter('linux.avi');% avifile('pvc1.avi','quality',qt,'compression','indeo5','fps',fs);
 mov.FrameRate = 5;
 mov.Quality=qt;
@@ -66,13 +68,13 @@ for nt=1:round(time_step/50):time_step
     %% -------------  sub 1 ET over time  --------------
     a.sub1=subplot('position'...
          ,[fig_pos.left,fig_pos.bottom,...
-          fig_pos.length-0.035,fig_pos.height]);
+          fig_pos.length-0.05,fig_pos.height]);
 yyaxis left
     a.plot1=plot(time_day(1:nt),total_evapo_mmday(1:nt),...
              'k-','linewidth',a.lw);hold on
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
     axis([-0.1 time_day(end) -0.5 inf])
 yyaxis right
@@ -80,7 +82,7 @@ yyaxis right
              'b--','linewidth',a.lw);hold off
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     txt=sprintf('Result at day %.2f',nod(nt).tout*c.dayPsec);
     title(txt);
     xlabel('Time (day)','FontSize',a.fs);
@@ -92,26 +94,35 @@ yyaxis right
     %% -------------  sub 2 ET for all surface nodes  --------------
     a.sub2=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom,...
-          fig_pos.length-0.035,fig_pos.height]);
+          fig_pos.length-0.05,fig_pos.height]);
+yyaxis left		   
     a.plot2=plot(x_matrix(1,:), evapo_mmday(:,nt),...
              'k-','linewidth',a.lw);hold off
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     xlabel('x','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
     axis([0 1.2 0 inf])
-    
+yyaxis right
+    solidmass_matrix_kg = reshape(nod(nt).terms{7},[inp.nn1,inp.nn2]);
+    solidmass_surface_g(1:inp.nn2) = sum (solidmass_matrix_kg(:,1:inp.nn2))*1000;
+    a.plot2   =  scatter(x_matrix(1,:), solidmass_surface_g(1:inp.nn2),10,...
+             'r*');hold off
+    get(gca,'xtick');
+    set(gca,'fontsize',10);
+    ylabel('Solid salt (g)','FontSize',a.fs);
+    axis([0 1.2 0 0.5])        
     %% -------------  sub 3 velocity vector for each node  --------------
     a.sub3=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom-0.64,...
-          fig_pos.length-0.035,fig_pos.height]);
+          fig_pos.length-0.05,fig_pos.height]);
     vx_matrix = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1]);
     vy_matrix = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1]);
     a.plot3=quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix);hold off
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
@@ -133,7 +144,7 @@ yyaxis right
     cbsal = colorbar;
     cbsal.Label.String = 'Saturation (-)';
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Saturation (-)')
@@ -155,7 +166,7 @@ yyaxis right
     cbsal = colorbar;
     cbsal.Label.String = 'Concentration (-)';
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     title('Concentration (kg/kg)');
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
@@ -177,38 +188,50 @@ yyaxis right
     cbsal = colorbar;
     cbsal.Label.String = 'Temperature (°C)';
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     title('Temperature (°C)');
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     %axis([10, 40,9,10])
+    %% ------------- total solid mass of salt --------------
+    a.sub7=subplot('position'...
+         ,[fig_pos.left+0.75,fig_pos.bottom,...
+          0.17,fig_pos.height]);
+    solidmass_total_g = zeros(1,time_step);
+    solidmass_total_g(nt)   = sum(solidmass_surface_g);
+    a.plot7 = scatter(time_day(nt),solidmass_total_g(nt),10,'bo');hold on
+    get(gca,'xtick');
+    set(gca,'fontsize',a.fs);
+    set(gca,'yaxislocation','right');
+    xlabel('time (day)','FontSize',a.fs);
+    axis([-0.1 time_day(end) 0 inf])															
     
     %% ------------- concentration profile at given x --------------
-    a.sub7=subplot('position'...
+    a.sub8=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.32,...
           0.15,fig_pos.height]);
     c_profile = c_matrix(:,11:20:51);
-    a.plot7=plot(c_profile,y_matrix(:,11:20:51),'-','linewidth',a.lw);hold off
+    a.plot8=plot(c_profile,y_matrix(:,11:20:51),'-','linewidth',a.lw);hold off
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     set(gca,'yaxislocation','right');
     xlabel('Concentration (-)','FontSize',a.fs);
     legend('x=0.2 m','x=0.6 m','x=1.0 m','Location','southeast')
     axis([0 0.3 0.2 0.4])
     %% ------------- zoom in velocity --------------
-    a.sub7=subplot('position'...
+    a.sub9=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.64,...
           0.15,fig_pos.height]);
     vx_matrix = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1]);
     vy_matrix = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1]);
-    a.plot7=quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix);hold off
+    a.plot9=quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix);hold off
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
-    set(gca,'fontsize',10);
+    set(gca,'fontsize',a.fs);
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([1. 1.2 0.2 0.35])
+    axis([1. 1.2 0.2 0.3])
     
     
     
