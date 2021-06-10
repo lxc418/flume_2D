@@ -8,7 +8,7 @@ time_day  = [bcof.tout]/3600/24;%second to day
 time_nod_day = arrayfun(@(y) y.tout,nod) * c.dayPsec;
 water_table  = inp.pbc/9800;
 
-x_matrix = reshape(nod(1).terms{x_idx},[inp.nn1,inp.nn2]);%inp.nn2 is number of nodes in y direction 
+x_matrix = reshape(nod(1).terms{x_idx},[inp.nn1,inp.nn2]);%inp.nn2 is number of nodes in x direction 
 y_matrix = reshape(nod(1).terms{y_idx},[inp.nn1,inp.nn2]);
 x_ele_matrix = reshape(ele(1).terms{xele_idx},[inp.nn1-1,inp.nn2-1]);
 y_ele_matrix = reshape(ele(1).terms{yele_idx},[inp.nn1-1,inp.nn2-1]);
@@ -18,9 +18,9 @@ evapo_kgs = zeros(inp.nn2,time_step);
 for i=1:inp.nn2
     
 if i<inp.nn2   
-    area1(1:i)    = (x_matrix(1,i+1)-x_matrix(1,i)); %evaporation area 
+    area1(1:i)    = (x_matrix(1,i+1)-x_matrix(1,i))*inp.z(1); %evaporation area 
 else
-    area1(1:i)    = (x_matrix(1,i)-x_matrix(1,i-1)); %the right end node
+    area1(1:i)    = (x_matrix(1,i)-x_matrix(1,i-1))*inp.z(1); %the right end node
 end 
 
     evapo_kgs(i,:)  = -arrayfun(@(y) y.qin(i),bcof);
@@ -30,7 +30,7 @@ end
 
 evapo_mmday(1,:)    =   evapo_mmday(1,:)*2;
 evapo_mmday(end,:)  =   evapo_mmday(end,:)*2;%avoid boundary effect by double the two nodes
-total_evapo_mmday(1:time_step)   =  sum (evapo_mmday(:,1:time_step)); %total evaporation rate
+total_evapo_mmday(1:time_step)   =  sum (evapo_mmday(:,1:time_step))./(length(area1)); %total evaporation rate
 
 cumulative_evapo_mm =   zeros(1,time_step); %cumulative evaporation amount
 for i=2:time_step
@@ -61,7 +61,7 @@ set (gcf,'Position',[0,0,1920,1080]); %resolution 1080p
 
 mov           =  VideoWriter('linux.avi');% avifile('pvc1.avi','quality',qt,'compression','indeo5','fps',fs);
 mov.FrameRate = 5;
-mov.Quality=qt;
+mov.Quality   = qt;
 open(mov);
 
 for nt=1:round(time_step/50):time_step
@@ -103,16 +103,17 @@ yyaxis left
     set(gca,'fontsize',a.fs);
     xlabel('x','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
-    axis([0 1.2 0 inf])
+    axis([0 1.2 0 40])
 yyaxis right
-    solidmass_matrix_kg = reshape(nod(nt).terms{7},[inp.nn1,inp.nn2]);
-    solidmass_surface_g(1:inp.nn2) = sum (solidmass_matrix_kg(:,1:inp.nn2))*1000;
-    a.plot2   =  scatter(x_matrix(1,:), solidmass_surface_g(1:inp.nn2),10,...
+    solidmass_matrix_kg = reshape(nod(nt).terms{sm_idx},[inp.nn1,inp.nn2]);
+    solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
+    solidmass_thickness_mm(1:inp.nn2) = solidmass_surface_kg./c.density_solid_nacl_kgPm3./area1*c.m2mm;
+    a.plot2   =  scatter(x_matrix(1,:), solidmass_thickness_mm(1:inp.nn2),10,...
              'r*');hold off
     get(gca,'xtick');
-    set(gca,'fontsize',10);
-    ylabel('Solid salt (g)','FontSize',a.fs);
-    axis([0 1.2 0 0.5])        
+    set(gca,'fontsize',a.fs);
+    ylabel('Solid salt (mm)','FontSize',a.fs);
+    axis([0 1.2 0 5])        
     %% -------------  sub 3 velocity vector for each node  --------------
     a.sub3=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom-0.64,...
@@ -134,8 +135,8 @@ yyaxis right
           fig_pos.length,fig_pos.height]);		  
     % write pressure and conc in matrix form.
     s_matrix  = reshape(nod(nt).terms{s_idx},[inp.nn1,inp.nn2]);
+yyaxis left		   
     a.plot4=contourf(x_matrix,y_matrix,s_matrix,'EdgeColor','none');hold off
-
 %    scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
     color = jet;
     color = flipud(color);
@@ -148,7 +149,13 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Saturation (-)')
-
+yyaxis right
+    s_surface_matrix = s_matrix(inp.nn1,:);
+    a.plot2=plot(x_matrix(1,:), s_surface_matrix,...
+             'w-','linewidth',a.lw);hold off
+    % ylabel('surface ssturation (-)','FontSize',a.fs);
+    axis([0 1.2 -0.1 2])
+    yticks([0,0.5,1])
 
 %% -------- contour plot on concentration ---------
     a.sub5=subplot('position'...
@@ -197,26 +204,28 @@ yyaxis right
     a.sub7=subplot('position'...
          ,[fig_pos.left+0.75,fig_pos.bottom,...
           0.17,fig_pos.height]);
+	solidmass_column_g(1:inp.nn2) = sum (solidmass_matrix_kg(:,1:inp.nn2))*1000;
     solidmass_total_g = zeros(1,time_step);
-    solidmass_total_g(nt)   = sum(solidmass_surface_g);
+	solidmass_total_g(nt)   = sum(solidmass_column_g);
     a.plot7 = scatter(time_day(nt),solidmass_total_g(nt),10,'bo');hold on
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     set(gca,'yaxislocation','right');
     xlabel('time (day)','FontSize',a.fs);
+	ylabel('Solid salt(g)','FontSize',a.fs);
     axis([-0.1 time_day(end) 0 inf])															
     
     %% ------------- concentration profile at given x --------------
     a.sub8=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.32,...
           0.15,fig_pos.height]);
-    c_profile = c_matrix(:,11:20:51);
-    a.plot8=plot(c_profile,y_matrix(:,11:20:51),'-','linewidth',a.lw);hold off
+    c_profile = c_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2);% integer is needed for colon operator
+    a.plot8=plot(c_profile,y_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2),'-','linewidth',a.lw);hold off
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     set(gca,'yaxislocation','right');
     xlabel('Concentration (-)','FontSize',a.fs);
-    legend('x=0.2 m','x=0.6 m','x=1.0 m','Location','southeast')
+    legend('x=0.3 m','x=0.6 m','x=0.9 m','x=1.2 m','Location','southeast')
     axis([0 0.3 0.2 0.4])
     %% ------------- zoom in velocity --------------
     a.sub9=subplot('position'...
@@ -239,7 +248,7 @@ yyaxis right
     writeVideo(mov,F);% add it as the next frame of the movie
 
 end
-
+saveas(a.fig,'a','fig')
 close(mov);
 close(a.fig);
 %figure

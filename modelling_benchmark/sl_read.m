@@ -18,7 +18,7 @@ y_idx  = strcmp(nod(1).label,'Y');
 p_idx  = strcmp(nod(1).label,'Pressure');
 c_idx  = strcmp(nod(1).label,'Concentration');
 s_idx  = strcmp(nod(1).label,'Saturation');
-sm_idx = strcmp(nod(1).label,'SM');
+sm_idx = strcmp(nod(1).label,'SOLIDMASS(KG)');
 temp_idx  = strcmp(nod(1).label,'TEMP');
 vy_idx    = strcmp(ele(1).label,'Y velocity');
 vx_idx    = strcmp(ele(1).label,'X velocity');
@@ -26,4 +26,4 @@ xele_idx  = strcmp(ele(1).label,'X origin');
 yele_idx  = strcmp(ele(1).label,'Y origin');
 
 %readlabdata;
-save('plot.mat') 
+save('plot.mat','-v7.3') 

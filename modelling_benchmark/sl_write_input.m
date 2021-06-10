@@ -28,7 +28,7 @@ fil.export_to_file();
 porosity                    = 0.39;
 c_saltwater_kgPkg           = 0.035;
 % c_freshwater_kgPkg          = 0.0001;
-water_table_m               = 0.25;
+water_table_m               = 0.23;
 
 initial_temperature_C       = 25;
 initial_concentration_kgPkg = 0.035;
@@ -36,7 +36,7 @@ initial_head_aquifer_m      = 0.3;
 permeability_sand_m2        = 5.67e-11;
 
 time_scale=10; 
-time_cycle=100000; %around 6 days
+time_cycle=500000; %around 6 days
 diffusivity=1e-9;
 
 %% input for meshing 
@@ -268,7 +268,7 @@ inp.tolu   = 1.e-12;
 %## [NPRINT]  [CNODAL]  [CELMNT]  [CINCID]  [CPANDS]  [CVEL]  [CCORT] [CBUDG]   [CSCRN]  [CPAUSE]
 %   2920        'N'        'N'        'N'        'Y'     'Y'        'Y'    'Y'      'Y' 'Y' 'Data Set 8A'
 
-inp.nprint = 100;
+inp.nprint = 1000;
 inp.cnodal = 'N';
 inp.celmnt = 'N';
 inp.cincid = 'N';
@@ -289,17 +289,17 @@ inp.cpause = 'Y';
 %     1000         1000       1000      1000       'Y'
 %##
 
-inp.ncolpr = 100;
+inp.ncolpr = 1000;
 %inp.ncol  = 'N'  'X'  'Y'  'P'  'U'  'S'  '-';
 inp.ncol   = {['N'],['X' ],[ 'Y'  ],['P' ],[ 'U' ],[ 'S' ],[ '-']};
 
-inp.lcolpr = 100;
+inp.lcolpr = 1000;
 inp.lcol   = {[ 'E' ],[ 'X' ],[ 'Y'  ],['VX' ],['VY' ],['-']};
 
-inp.nbcfpr = 100;
-inp.nbcspr = 100;
-inp.nbcppr = 100;
-inp.nbcupr = 100;
+inp.nbcfpr = 1000;
+inp.nbcspr = 1000;
+inp.nbcppr = 1000;
+inp.nbcupr = 1000;
 inp.cinact = 'Y';
 
 %##    DATASET 9:  FLUID PROPERTIES
@@ -615,15 +615,20 @@ inp.uinc  = uinc;
 
 % DATASET 19:  Data for Specified Pressure Nodes
 %###  [IPBC]                [PBC]                [UBC]
+if water_table_m ==0
+	inp.ipbc = '%';
+	inp.pbc  = '%';
+	inp.ubc  = '%';
+	else
+	bottom_nodes                = node_index_mtx_gravity_compensated(ny,:)';  % below 4 metre, greater than 200 m away from the centre
+	pbc(1:nx)                   = water_table_m*c.rhow_pure_water*c.g;
+	ubc(1:nx)                   = c_saltwater_kgPkg;
 
-bottom_nodes                = node_index_mtx_gravity_compensated(ny,:)';  % below 4 metre, greater than 200 m away from the centre
-pbc(1:nx)                   = water_table_m*c.rhow_pure_water*c.g;
-ubc(1:nx)                   = c_saltwater_kgPkg;
-
-inp.ipbc = bottom_nodes;
-inp.pbc  = pbc';
-inp.ubc  = ubc';
-inp.npbc = length(inp.pbc);
+	inp.ipbc = bottom_nodes;
+	inp.pbc  = pbc';
+	inp.ubc  = ubc';
+	inp.npbc = length(inp.pbc);
+end  
 
 %mask_mtx_aquifer_boundary_gravity_compensated_left = and(y_nod_mtx_gravity_compensated_m<-4, x_nod_mtx_gravity_compensated_m<0.01);
 %ipbc_node_idx_array_left                           = node_index_mtx_gravity_compensated(mask_mtx_aquifer_boundary_gravity_compensated_left);
