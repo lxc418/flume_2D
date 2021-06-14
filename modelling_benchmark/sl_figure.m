@@ -64,7 +64,7 @@ mov.FrameRate = 5;
 mov.Quality   = qt;
 open(mov);
 
-for nt=1:round(time_step/50):time_step
+for nt=1:round(time_step/40):time_step
     %% -------------  sub 1 ET over time  --------------
     a.sub1=subplot('position'...
          ,[fig_pos.left,fig_pos.bottom,...
@@ -153,7 +153,7 @@ yyaxis right
     s_surface_matrix = s_matrix(inp.nn1,:);
     a.plot2=plot(x_matrix(1,:), s_surface_matrix,...
              'w-','linewidth',a.lw);hold off
-    % ylabel('surface ssturation (-)','FontSize',a.fs);
+    % ylabel('surface saturation (-)','FontSize',a.fs);
     axis([0 1.2 -0.1 2])
     yticks([0,0.5,1])
 
@@ -161,11 +161,10 @@ yyaxis right
     a.sub5=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom-0.32,...
           fig_pos.length,fig_pos.height]);
-    
     % write pressure and conc in matrix form.
-    c_matrix = reshape(nod(nt).terms{c_idx},[inp.nn1,inp.nn2]);    
-    a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold off
-	
+    c_matrix = reshape(nod(nt).terms{c_idx},[inp.nn1,inp.nn2]);
+yyaxis left
+    a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold off	
 %	scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
     color = jet;
     colormap(gca,color);
@@ -178,6 +177,13 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     %axis([10, 40,9,10])
+yyaxis right
+    c_surface_matrix = c_matrix(inp.nn1,:);
+    a.plot2=plot(x_matrix(1,:), c_surface_matrix,...
+             'w-','linewidth',a.lw);hold off
+    % ylabel('surface concentration (-)','FontSize',a.fs);
+    axis([0 1.2 -0.05 0.6])
+    yticks([0,0.1,0.2,0.3])
     
     %% -------- contour plot on temperature ---------
     a.sub6=subplot('position'...
@@ -219,7 +225,7 @@ yyaxis right
     a.sub8=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.32,...
           0.15,fig_pos.height]);
-    c_profile = c_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2);% integer is needed for colon operator
+    c_profile = c_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2);% integer is needed for colon operator (should be modified based on the x length)
     a.plot8=plot(c_profile,y_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2),'-','linewidth',a.lw);hold off
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
