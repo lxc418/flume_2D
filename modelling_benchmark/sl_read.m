@@ -11,6 +11,7 @@ nod  = readNOD(fil.basename);
 ele  = readELE( fil.basename);
 bcop = readBCOP(fil.basename);
 bcof = readBCOF(fil.basename);
+qv   = readQV(inp,ele);
 
 %index for p c and s
 x_idx  = strcmp(nod(1).label,'X');

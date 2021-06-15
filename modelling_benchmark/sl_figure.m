@@ -1,6 +1,6 @@
-clear
-load plot.mat
-fclose('all');
+% clear
+% load plot.mat
+% fclose('all');
 c=ConstantObj();
 
 time_step = length(bcof);
@@ -164,7 +164,18 @@ yyaxis right
     % write pressure and conc in matrix form.
     c_matrix = reshape(nod(nt).terms{c_idx},[inp.nn1,inp.nn2]);
 yyaxis left
-    a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold off	
+    a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
+    qvx_mtx = qv(nt).qvx; % vector of vapor is acquired from the concentration difference bewteen two nodes,
+    qvy_mtx = qv(nt).qvy; % which is used to calculate the vector in element center.
+    qvx_plot_mtx = zeros(inp.nn1-1,inp.nn2-1);  
+    qvy_plot_mtx = zeros(inp.nn1-1,inp.nn2-1);
+    for i = 1:inp.nn2-1 %along x
+        for j = 1:inp.nn1-1 %along y
+            qvx_plot_mtx(j,i) = (qvx_mtx(j,i)+qvx_mtx(j+1,i))/2;
+            qvy_plot_mtx(j,i) = (qvy_mtx(j,i)+qvy_mtx(j,i+1))/2;
+        end
+    end
+    a.plot5=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,'k');hold off
 %	scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
     color = jet;
     colormap(gca,color);
@@ -179,7 +190,7 @@ yyaxis left
     %axis([10, 40,9,10])
 yyaxis right
     c_surface_matrix = c_matrix(inp.nn1,:);
-    a.plot2=plot(x_matrix(1,:), c_surface_matrix,...
+    a.plot5=plot(x_matrix(1,:), c_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface concentration (-)','FontSize',a.fs);
     axis([0 1.2 -0.05 0.6])
@@ -206,20 +217,29 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     %axis([10, 40,9,10])
-    %% ------------- total solid mass of salt --------------
+    %% ------------- total solid mass of salt or zoom in vapor vector --------------
     a.sub7=subplot('position'...
          ,[fig_pos.left+0.75,fig_pos.bottom,...
           0.17,fig_pos.height]);
-	solidmass_column_g(1:inp.nn2) = sum (solidmass_matrix_kg(:,1:inp.nn2))*1000;
-    solidmass_total_g = zeros(1,time_step);
-	solidmass_total_g(nt)   = sum(solidmass_column_g);
-    a.plot7 = scatter(time_day(nt),solidmass_total_g(nt),10,'bo');hold on
+% 	solidmass_column_g(1:inp.nn2) = sum (solidmass_matrix_kg(:,1:inp.nn2))*1000;
+%     solidmass_total_g = zeros(1,time_step);
+% 	solidmass_total_g(nt)   = sum(solidmass_column_g);
+%     a.plot7 = scatter(time_day(nt),solidmass_total_g(nt),10,'bo');hold on
+%     get(gca,'xtick');
+%     set(gca,'fontsize',a.fs);
+%     set(gca,'yaxislocation','right');
+%     xlabel('time (day)','FontSize',a.fs);
+% 	ylabel('Solid salt(g)','FontSize',a.fs);
+%     axis([-0.1 time_day(end) 0 inf])	
+
+    a.plot7=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
+    a.plot7=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,2,'r');hold off
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
-    set(gca,'yaxislocation','right');
-    xlabel('time (day)','FontSize',a.fs);
-	ylabel('Solid salt(g)','FontSize',a.fs);
-    axis([-0.1 time_day(end) 0 inf])															
+    xlabel('x (m)','FontSize',a.fs);
+    ylabel('Elevation (m)','FontSize',a.fs);
+    title('Vapor flow')
+    axis([0. 0.8 0.33 0.4])    
     
     %% ------------- concentration profile at given x --------------
     a.sub8=subplot('position'...
