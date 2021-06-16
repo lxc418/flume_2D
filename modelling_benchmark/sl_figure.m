@@ -71,7 +71,7 @@ for nt=1:round(time_step/40):time_step
           fig_pos.length-0.05,fig_pos.height]);
 yyaxis left
     a.plot1=plot(time_day(1:nt),total_evapo_mmday(1:nt),...
-             'k-','linewidth',a.lw);hold on
+             'k-','linewidth',a.lw);hold off
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
@@ -135,8 +135,11 @@ yyaxis right
           fig_pos.length,fig_pos.height]);		  
     % write pressure and conc in matrix form.
     s_matrix  = reshape(nod(nt).terms{s_idx},[inp.nn1,inp.nn2]);
-yyaxis left		   
-    a.plot4=contourf(x_matrix,y_matrix,s_matrix,'EdgeColor','none');hold off
+yyaxis left
+    vapori_plane = qv(nt).vapori_plane_y;
+    a.plot4=contourf(x_matrix,y_matrix,s_matrix,'EdgeColor','none');hold on
+    a.plot4=plot(x_matrix(1,:), vapori_plane,...
+             	'-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold off
 %    scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
     color = jet;
     color = flipud(color);
@@ -151,7 +154,7 @@ yyaxis left
     title('Saturation (-)')
 yyaxis right
     s_surface_matrix = s_matrix(inp.nn1,:);
-    a.plot2=plot(x_matrix(1,:), s_surface_matrix,...
+    a.plot4=plot(x_matrix(1,:), s_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface saturation (-)','FontSize',a.fs);
     axis([0 1.2 -0.1 2])
@@ -165,6 +168,8 @@ yyaxis right
     c_matrix = reshape(nod(nt).terms{c_idx},[inp.nn1,inp.nn2]);
 yyaxis left
     a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
+    a.plot4=plot(x_matrix(1,:), vapori_plane,...
+             	'-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold on
     qvx_mtx = qv(nt).qvx; % vector of vapor is acquired from the concentration difference bewteen two nodes,
     qvy_mtx = qv(nt).qvy; % which is used to calculate the vector in element center.
     qvx_plot_mtx = zeros(inp.nn1-1,inp.nn2-1);  
@@ -179,7 +184,7 @@ yyaxis left
 %	scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
     color = jet;
     colormap(gca,color);
-	caxis([0 0.264])
+	caxis([0.035 0.264])
     cbsal = colorbar;
     cbsal.Label.String = 'Concentration (-)';
     get(gca,'xtick');
@@ -233,26 +238,43 @@ yyaxis right
 %     axis([-0.1 time_day(end) 0 inf])	
 
     a.plot7=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
-    a.plot7=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,2,'r');hold off
+    a.plot4=plot(x_matrix(1,:), vapori_plane,...
+             	'-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold on
+    a.plot7=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,...
+                'color',[0.00,0.45,0.74]);hold off   
+    color = jet;
+    colormap(gca,color);
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
-    xlabel('x (m)','FontSize',a.fs);
+%    xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Vapor flow')
-    axis([0. 0.8 0.33 0.4])    
+    axis([0.6 1 0.3 0.38])    
     
-    %% ------------- concentration profile at given x --------------
+    %% ------------- concentration profile or porosity at given x --------------
     a.sub8=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.32,...
-          0.15,fig_pos.height]);
-    c_profile = c_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2);% integer is needed for colon operator (should be modified based on the x length)
-    a.plot8=plot(c_profile,y_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2),'-','linewidth',a.lw);hold off
+          0.15,fig_pos.height],'Color', 'none');
+%     c_profile = c_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2);% integer is needed for colon operator (should be modified based on the x length)
+%     a.plot8=plot(c_profile,y_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2),'-','linewidth',a.lw);hold off
+%     get(gca,'xtick');
+%     set(gca,'fontsize',a.fs);
+%     set(gca,'yaxislocation','right');
+%     xlabel('Concentration (-)','FontSize',a.fs);
+%     legend('x=0.3 m','x=0.6 m','x=0.9 m','x=1.2 m','Location','southeast')
+%     axis([0 0.3 0.2 0.4])
+    
+    poro_matrix = reshape(nod(nt).terms{poro_idx},[inp.nn1,inp.nn2]);
+    poro_profile = poro_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2);          
+    a.plot8=plot(poro_profile, y_matrix(:,(inp.nn2-1)*0.25+1:(inp.nn2-1)*0.25:inp.nn2),'o-','linewidth',a.lw);hold off
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     set(gca,'yaxislocation','right');
-    xlabel('Concentration (-)','FontSize',a.fs);
+    xlabel('prorsity (-)','FontSize',a.fs);
+    axis([inp.por(1)-0.1 inp.por(1)+0.02 0.2 0.4])
     legend('x=0.3 m','x=0.6 m','x=0.9 m','x=1.2 m','Location','southeast')
-    axis([0 0.3 0.2 0.4])
+    set(gca, 'XDir','reverse')
+
     %% ------------- zoom in velocity --------------
     a.sub9=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.64,...
