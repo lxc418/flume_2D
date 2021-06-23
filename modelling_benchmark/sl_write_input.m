@@ -256,12 +256,12 @@ inp.rpmax  = 5e+3;
 inp.rumax  = 1.0e-2;
 % ##  [CSOLVP]  [ITRMXP]         [TOLP]
 inp.csolvp = 'ORTHOMIN' ;
-inp.itrmxp = 2000;
+inp.itrmxp = 20000;
 inp.tolp   = 1.e-12;
 
 %##  [CSOLVU]  [ITRMXU]         [TOLU]
 inp.csolvu = 'ORTHOMIN';
-inp.itrmxu = 2000;
+inp.itrmxu = 20000;
 inp.tolu   = 1.e-12;
 
 %##  DATASET 8:  Output Controls and Options
@@ -327,7 +327,7 @@ inp.rhos   = 2600.;   %solid density of sodium chloride
 
 inp.adsmod = 'FREUNDLICH';
 %inp.adsmod = 'NONE';
-inp.chi1   = 2.e-47;
+inp.chi1   = 1.e-48;
 inp.chi2   = 0.05 ;
 
 %##  DATASET 12:  Production of Energy or Solute Mass
@@ -686,10 +686,10 @@ fprintf('use the original ics file')
 % ics file
 ics       = icsObj('FLUME','read_from_file','no');
 ics.tics  = 0.0;
-%ics.cpuni = 'NONUNIFORM';
-%ics.pm1   = pm1_mtx_gravity_pa;
-ics.cpuni = 'UNIFORM';
-ics.pm1   = 10;
+ics.cpuni = 'NONUNIFORM';
+ics.pm1   = pm1_mtx_gravity_pa;
+% ics.cpuni = 'UNIFORM';
+% ics.pm1   = 10;
 ics.cuuni = 'UNIFORM';
 ics.um1   = initial_concentration_kgPkg ;
 ics.ctuni = 'UNIFORM';

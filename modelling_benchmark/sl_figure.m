@@ -1,6 +1,6 @@
-% clear
-% load plot.mat
-% fclose('all');
+clear
+load plot.mat
+fclose('all');
 c=ConstantObj();
 
 time_step = length(bcof);
@@ -244,6 +244,7 @@ yyaxis right
                 'color',[0.00,0.45,0.74]);hold off   
     color = jet;
     colormap(gca,color);
+	caxis([0.035 0.264])
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
 %    xlabel('x (m)','FontSize',a.fs);
