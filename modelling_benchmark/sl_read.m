@@ -29,5 +29,9 @@ kr_idx    = strcmp(ele(1).label,'RELK');
 
 %read vapor transport
 qv   = readQV(inp,ele,nod);
+%read evaporation rate(include vapor contribution)
+[et,mesh]   = readBCO(inp,nod);
+et_idx      = strcmp(et(1).label,'et');
+aet_idx		= strcmp(et(1).label,'aet');
 %readlabdata;
-save('plot.mat','-v7.3') 
+% save('plot.mat','-v7.3') 

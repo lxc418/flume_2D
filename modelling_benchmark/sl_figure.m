@@ -1,9 +1,9 @@
-clear
-load plot.mat
-fclose('all');
+% clear
+% load plot.mat
+% fclose('all');
 c=ConstantObj();
 
-time_step = length(bcof);
+time_step = length(et);
 time_day  = [bcof.tout]/3600/24;%second to day
 time_nod_day = arrayfun(@(y) y.tout,nod) * c.dayPsec;
 water_table  = inp.pbc/9800;
@@ -13,32 +13,35 @@ y_matrix = reshape(nod(1).terms{y_idx},[inp.nn1,inp.nn2]);
 x_ele_matrix = reshape(ele(1).terms{xele_idx},[inp.nn1-1,inp.nn2-1]);
 y_ele_matrix = reshape(ele(1).terms{yele_idx},[inp.nn1-1,inp.nn2-1]);
 
-%% evaporation data
-evapo_kgs = zeros(inp.nn2,time_step);
-for i=1:inp.nn2
+%% evaporation data (from bcof without the vapor contribution)
+% evapo_kgs = zeros(time_step,inp.nn2);
+
+% for i=1:inp.nn2
     
-if i<inp.nn2   
-    area1(1:i)    = (x_matrix(1,i+1)-x_matrix(1,i))*inp.z(1); %evaporation area 
-else
-    area1(1:i)    = (x_matrix(1,i)-x_matrix(1,i-1))*inp.z(1); %the right end node
-end 
+% if i<inp.nn2   
+    % area1_m2(1:i)    = (x_matrix(1,i+1)-x_matrix(1,i))*inp.z(1); %evaporation area 
+% else
+    % area1_m2(1:i)    = (x_matrix(1,i)-x_matrix(1,i-1))*inp.z(1); %the right end node
+% end 
 
-    evapo_kgs(i,:)  = -arrayfun(@(y) y.qin(i),bcof);
-    evapo_mmday     = evapo_kgs/area1(i)*86400; %evaporation rate of every surface node
+    % evapo_kgs(i,:)  = -arrayfun(@(y) y.qin(i),bcof);
+    % evapo_mmday     = evapo_kgs/area1_m2(i)*86400; %evaporation rate of every surface node
     
-end
+% end
 
-evapo_mmday(1,:)    =   evapo_mmday(1,:)*2;
-evapo_mmday(end,:)  =   evapo_mmday(end,:)*2;%avoid boundary effect by double the two nodes
-total_evapo_mmday(1:time_step)   =  sum (evapo_mmday(:,1:time_step))./(length(area1)); %total evaporation rate
-
-cumulative_evapo_mm =   zeros(1,time_step); %cumulative evaporation amount
+area1_m2    = (x_matrix(1,2)-x_matrix(1,1))*inp.z(1);
 for i=2:time_step
-    cumulative_evapo_mm(1) =  total_evapo_mmday(1)*inp.scalt*inp.nbcfpr*c.dayPsec;
-    cumulative_evapo_mm(i) =  total_evapo_mmday(i)*inp.scalt*inp.nbcfpr*c.dayPsec + cumulative_evapo_mm(i-1);
+
+	evapo_mmday(1,:)  		 =  reshape(et(1).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
+	total_evapo_mmday(1)     =  sum (evapo_mmday(1,:))./(length(inp.nn2));
+	evapo_mmday(i,:)  		 =  reshape(et(i).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
+	total_evapo_mmday(i)     =  sum (evapo_mmday(i,:))./(length(inp.nn2));
+	
+    cumulative_evapo_mm(1)   =  total_evapo_mmday(1)*inp.scalt*inp.nbcfpr*c.dayPsec;
+    cumulative_evapo_mm(i)   =  total_evapo_mmday(i)*inp.scalt*inp.nbcfpr*c.dayPsec + cumulative_evapo_mm(i-1);
+
 end
 
-   
 
 %% plot control
 fig_pos.left   = 0.05;
@@ -96,7 +99,7 @@ yyaxis right
          ,[fig_pos.left+0.4,fig_pos.bottom,...
           fig_pos.length-0.05,fig_pos.height]);
 yyaxis left		   
-    a.plot2=plot(x_matrix(1,:), evapo_mmday(:,nt),...
+    a.plot2=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              'k-','linewidth',a.lw);hold off
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
@@ -107,7 +110,7 @@ yyaxis left
 yyaxis right
     solidmass_matrix_kg = reshape(nod(nt).terms{sm_idx},[inp.nn1,inp.nn2]);
     solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
-    solidmass_thickness_mm(1:inp.nn2) = solidmass_surface_kg./c.density_solid_nacl_kgPm3./area1*c.m2mm;
+    solidmass_thickness_mm(1:inp.nn2) = solidmass_surface_kg./c.density_solid_nacl_kgPm3./area1_m2*c.m2mm;
     a.plot2   =  scatter(x_matrix(1,:), solidmass_thickness_mm(1:inp.nn2),10,...
              'r*');hold off
     get(gca,'xtick');
@@ -180,7 +183,7 @@ yyaxis left
             qvy_plot_mtx(j,i) = (qvy_mtx(j,i)+qvy_mtx(j,i+1))/2;
         end
     end
-    a.plot5=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,'k');hold off
+    a.plot5=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,'k-');hold off
 %	scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
     color = jet;
     colormap(gca,color);
@@ -201,27 +204,46 @@ yyaxis right
     axis([0 1.2 -0.05 0.6])
     yticks([0,0.1,0.2,0.3])
     
-    %% -------- contour plot on temperature ---------
+    %% --------  plot on surface sat vs concentration & solid salt vs evp  ---------
     a.sub6=subplot('position'...
          ,[fig_pos.left,fig_pos.bottom-0.64,...
-          fig_pos.length,fig_pos.height]);
-    
-    % write pressure and conc in matrix form.
-    temp_matrix = reshape(nod(nt).terms{temp_idx},[inp.nn1,inp.nn2]);    
-    a.plot6=contourf(x_matrix,y_matrix,temp_matrix-273.15,'EdgeColor','none');hold off
-	
-%	scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
-    color = jet;
-    colormap(gca,color);
-	caxis([20 40])
-    cbsal = colorbar;
-    cbsal.Label.String = 'Temperature (°C)';
-    get(gca,'xtick');
+           fig_pos.length-0.05,fig_pos.height]);
+yyaxis left
+    a.plot6=plot(x_matrix(1,:), s_surface_matrix,...
+             '-','linewidth',a.lw,'color',[0.4660 0.6740 0.1880]);hold on		  
+    a.plot6=plot(x_matrix(1,:), c_surface_matrix,...
+             '-','linewidth',a.lw,'color',[0.8500 0.3250 0.0980]);hold off
+	axis([0 1.2 0 1.05])
     set(gca,'fontsize',a.fs);
-    title('Temperature (°C)');
+	set(gca,'YColor',[0.4660 0.6740 0.1880]);
+	ylabel('con or sat (-)','FontSize',a.fs);
+
+
+yyaxis right	
+    a.plot6=plot(x_matrix(1,:), evapo_mmday(nt,:),...
+             '-','linewidth',a.lw,'color',[0 0.4470 0.7410]);hold off
+	axis([0 1.2 0 40])
+    set(gca,'fontsize',a.fs);
+	set(gca,'YColor',[0 0.4470 0.7410]);
     xlabel('x (m)','FontSize',a.fs);
-    ylabel('Elevation (m)','FontSize',a.fs);
-    %axis([10, 40,9,10])
+    ylabel('Evt (mm/day)','FontSize',a.fs);
+	legend('saturation','concentration','evaporation','FontSize',a.fs)
+% temperature contour plot    
+    % write pressure and conc in matrix form.
+    % temp_matrix = reshape(nod(nt).terms{temp_idx},[inp.nn1,inp.nn2]);    
+    % a.plot6=contourf(x_matrix,y_matrix,temp_matrix-273.15,'EdgeColor','none');hold off
+	
+% %	scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
+    % color = jet;
+    % colormap(gca,color);
+	% caxis([20 40])
+    % cbsal = colorbar;
+    % cbsal.Label.String = 'Temperature (°C)';
+    % get(gca,'xtick');
+    % set(gca,'fontsize',a.fs);
+    % title('Temperature (°C)');
+    % xlabel('x (m)','FontSize',a.fs);
+    % ylabel('Elevation (m)','FontSize',a.fs);
     %% ------------- total solid mass of salt or zoom in vapor vector --------------
     a.sub7=subplot('position'...
          ,[fig_pos.left+0.75,fig_pos.bottom,...
@@ -238,7 +260,7 @@ yyaxis right
 %     axis([-0.1 time_day(end) 0 inf])	
 
     a.plot7=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
-    a.plot4=plot(x_matrix(1,:), vapori_plane,...
+    a.plot7=plot(x_matrix(1,:), vapori_plane,...
              	'-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold on
     a.plot7=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,...
                 'color',[0.00,0.45,0.74]);hold off   
