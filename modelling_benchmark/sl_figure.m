@@ -33,9 +33,9 @@ area1_m2    = (x_matrix(1,2)-x_matrix(1,1))*inp.z(1);
 for i=2:time_step
 
 	evapo_mmday(1,:)  		 =  reshape(et(1).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
-	total_evapo_mmday(1)     =  sum (evapo_mmday(1,:))./(length(inp.nn2));
+	total_evapo_mmday(1)     =  sum (evapo_mmday(1,:))./inp.nn2; %the evp rate from the whole surface
 	evapo_mmday(i,:)  		 =  reshape(et(i).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
-	total_evapo_mmday(i)     =  sum (evapo_mmday(i,:))./(length(inp.nn2));
+	total_evapo_mmday(i)     =  sum (evapo_mmday(i,:))./inp.nn2;
 	
     cumulative_evapo_mm(1)   =  total_evapo_mmday(1)*inp.scalt*inp.nbcfpr*c.dayPsec;
     cumulative_evapo_mm(i)   =  total_evapo_mmday(i)*inp.scalt*inp.nbcfpr*c.dayPsec + cumulative_evapo_mm(i-1);
@@ -106,7 +106,7 @@ yyaxis left
     set(gca,'fontsize',a.fs);
     xlabel('x','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
-    axis([0 1.2 0 40])
+    axis([0 x_matrix(1,end) 0 40])
 yyaxis right
     solidmass_matrix_kg = reshape(nod(nt).terms{sm_idx},[inp.nn1,inp.nn2]);
     solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
@@ -116,7 +116,7 @@ yyaxis right
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     ylabel('Solid salt (mm)','FontSize',a.fs);
-    axis([0 1.2 0 5])        
+    axis([0 x_matrix(1,end) 0 5])        
     %% -------------  sub 3 velocity vector for each node  --------------
     a.sub3=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom-0.64,...
@@ -130,7 +130,7 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([0 1.2 0 0.4])
+    axis([0 x_matrix(1,end) 0 y_matrix(end,1)])
    
 %% -------- contour plot on Saturation ---------
     a.sub4=subplot('position'...
@@ -160,7 +160,7 @@ yyaxis right
     a.plot4=plot(x_matrix(1,:), s_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface saturation (-)','FontSize',a.fs);
-    axis([0 1.2 -0.1 2])
+    axis([0 x_matrix(1,end) -0.05 2])
     yticks([0,0.5,1])
 
 %% -------- contour plot on concentration ---------
@@ -201,7 +201,7 @@ yyaxis right
     a.plot5=plot(x_matrix(1,:), c_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface concentration (-)','FontSize',a.fs);
-    axis([0 1.2 -0.05 0.6])
+    axis([0 x_matrix(1,end) -0.05 0.6])
     yticks([0,0.1,0.2,0.3])
     
     %% --------  plot on surface sat vs concentration & solid salt vs evp  ---------
@@ -213,7 +213,7 @@ yyaxis left
              '-','linewidth',a.lw,'color',[0.4660 0.6740 0.1880]);hold on		  
     a.plot6=plot(x_matrix(1,:), c_surface_matrix,...
              '-','linewidth',a.lw,'color',[0.8500 0.3250 0.0980]);hold off
-	axis([0 1.2 0 1.05])
+	axis([0 x_matrix(1,end) 0 1.05])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0.4660 0.6740 0.1880]);
 	ylabel('con or sat (-)','FontSize',a.fs);
@@ -222,7 +222,7 @@ yyaxis left
 yyaxis right	
     a.plot6=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              '-','linewidth',a.lw,'color',[0 0.4470 0.7410]);hold off
-	axis([0 1.2 0 40])
+	axis([0 x_matrix(1,end) 0 40])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0 0.4470 0.7410]);
     xlabel('x (m)','FontSize',a.fs);
