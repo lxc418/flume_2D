@@ -413,15 +413,15 @@ inp.mrk    = 1;
 % #     PET... (PA) WHEN PORE WATER PRESSURE REACHED THE POINT LOWER THAN PET, EVAPORATION IS TAKING PLACE
 % #     UVM... (KG/KG) SOLUBILITY
 % #     NGT... IF =1 EVAPORATION IS SWICHED OFF DURING NIGHT TIME, IF =0 IT IS ALWAYS ON
-% #     ITE... TEMPERATORYLY NOT USING, IT WAS DESIGNED FOR THE NUMBER OF TIME CALL FOR BCTIME
+% #     ITE... ITE=0 SOLID SALT IS OBTAINED FROM SALT CURVE, ITE=1 SM IS INHERITED FROM *.ICS FILE
 % ##         [QET]         [UET]          [PET]          [UVM]        [NIGHT]     [ITE]
-            % 2.0          1.D-5       -0.001D+00      0.264D0           0          1
+            % 2.0          1.D-5       -0.001D+00      0.264D0           0          0
 inp.qet    = 2.;
 inp.uet    = 1.e-5;
 inp.pet    = -0.001;
 inp.uvm    = 0.264;			
 inp.night  = 0;
-inp.ite    = 1;				
+inp.ite    = 0;				
 					
             
 % ##  DATASET 13E: EVAPORATION PARAMETER
