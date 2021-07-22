@@ -29,6 +29,15 @@ y_ele_matrix = reshape(ele(1).terms{yele_idx},[inp.nn1-1,inp.nn2-1]);
     
 % end
 
+%% solute inflow from bottom (from bcof without the vapor contribution)
+
+for i= 1:inp.nn2
+
+    solute_kgs(i,:)  = -arrayfun(@(y) y.qpu(i),bcop);
+    
+end
+solute_gday= solute_kgs'.*c.kg2g*c.secPday;
+
 area1_m2    = (x_matrix(1,2)-x_matrix(1,1))*inp.z(1);
 for i=2:time_step
 
@@ -68,18 +77,23 @@ mov.Quality   = qt;
 open(mov);
 
 for nt=1:round(time_step/40):time_step
-    %% -------------  sub 1 ET over time  --------------
+%% -------------  sub 1 ET over time  --------------
     a.sub1=subplot('position'...
          ,[fig_pos.left,fig_pos.bottom,...
           fig_pos.length-0.05,fig_pos.height]);
 yyaxis left
     a.plot1=plot(time_day(1:nt),total_evapo_mmday(1:nt),...
              'k-','linewidth',a.lw);hold off
+    grid on
+	grid minor
+	ax = gca;
+	ax.GridAlpha = 0.4;
+	ax.MinorGridAlpha = 0.5;	
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
-    ylabel('Evt (mm/day)','FontSize',a.fs);
-    axis([-0.1 time_day(end) -0.5 inf])
+    ylabel('avg Evp (mm/day)','FontSize',a.fs);
+    axis([-0.1 time_day(end) -0.5 inf])	
 yyaxis right
     a.plot1=plot(time_day(1:nt),cumulative_evapo_mm(1:nt),...
              'b--','linewidth',a.lw);hold off
@@ -92,21 +106,48 @@ yyaxis right
     ylabel('Cumulative Evt (mm)','FontSize',a.fs);
     axis([-0.1 time_day(end) 0 inf])
 
+	ax = gca;
+	ax.YAxis(1).Color = 'k';
+	ax.YAxis(2).Color = 'b';
     %title('ead profile');
+%% -------------  sub 2_1 bottom boundary solute flux  --------------
+    a.sub2=subplot('position'...
+         ,[fig_pos.left+0.4,fig_pos.bottom+fig_pos.height/2,...
+          fig_pos.length-0.05,fig_pos.height/2]);	   
+    a.plot2=plot(x_matrix(1,:), solute_gday(nt,:),...
+             '-','color',[0.8500 0.3250 0.0980],'linewidth',a.lw);hold off
+	grid on
+	grid minor
+		ax = gca;
+	ax.GridAlpha = 0.4;
+	ax.MinorGridAlpha = 0.5;
+    %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
+    get(gca,'xtick');
+    set(gca,'fontsize',a.fs);
+    ylabel('bottom solute flux (g/day)','FontSize',a.fs);
+    axis([0 1.2 -5 5])
 
-    %% -------------  sub 2 ET for all surface nodes  --------------
+	ax = gca;	
+	ax.XAxis.Visible = 'off';
+	ax.YAxis.Color = [0.8500 0.3250 0.0980];
+%% -------------  sub 2_2 ET for all surface nodes  --------------
     a.sub2=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom,...
-          fig_pos.length-0.05,fig_pos.height]);
+          fig_pos.length-0.05,fig_pos.height/2]);
 yyaxis left		   
     a.plot2=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              'k-','linewidth',a.lw);hold off
+	grid on
+	grid minor
+	ax = gca;
+	ax.GridAlpha = 0.4;
+	ax.MinorGridAlpha = 0.5;
     %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     xlabel('x','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) 0 40])
+    axis([0 1.2 0 25])
 yyaxis right
     solidmass_matrix_kg = reshape(nod(nt).terms{sm_idx},[inp.nn1,inp.nn2]);
     solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
@@ -116,23 +157,12 @@ yyaxis right
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     ylabel('Solid salt (mm)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) 0 5])        
-    %% -------------  sub 3 velocity vector for each node  --------------
-    a.sub3=subplot('position'...
-         ,[fig_pos.left+0.4,fig_pos.bottom-0.64,...
-          fig_pos.length-0.05,fig_pos.height]);
-    vx_matrix = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1]);
-    vy_matrix = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1]);
-    a.plot3=quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix);hold off
-    %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
-    get(gca,'xtick');
-    set(gca,'fontsize',a.fs);
-    xlabel('x (m)','FontSize',a.fs);
-    ylabel('Elevation (m)','FontSize',a.fs);
-    title('Velocity')
-    axis([0 x_matrix(1,end) 0 y_matrix(end,1)])
+    axis([0 1.2 0 5])
+	ax = gca;
+	ax.YAxis(1).Color = 'k';
+	ax.YAxis(2).Color = 'r';	
    
-%% -------- contour plot on Saturation ---------
+%% -------- sub 3 contour plot on Saturation ---------
     a.sub4=subplot('position'...
          ,[fig_pos.left,fig_pos.bottom-0.32,...
           fig_pos.length,fig_pos.height]);		  
@@ -160,10 +190,10 @@ yyaxis right
     a.plot4=plot(x_matrix(1,:), s_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface saturation (-)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) -0.05 2])
+    axis([0 1.2 -0.1 2])
     yticks([0,0.5,1])
 
-%% -------- contour plot on concentration ---------
+%% -------- sub 4 contour plot on concentration ---------
     a.sub5=subplot('position'...
          ,[fig_pos.left+0.4,fig_pos.bottom-0.32,...
           fig_pos.length,fig_pos.height]);
@@ -201,10 +231,10 @@ yyaxis right
     a.plot5=plot(x_matrix(1,:), c_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface concentration (-)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) -0.05 0.6])
+    axis([0 1.2 -0.05 0.6])
     yticks([0,0.1,0.2,0.3])
     
-    %% --------  plot on surface sat vs concentration & solid salt vs evp  ---------
+%% -------- sub 5 plot on surface sat vs concentration & solid salt vs evp  ---------
     a.sub6=subplot('position'...
          ,[fig_pos.left,fig_pos.bottom-0.64,...
            fig_pos.length-0.05,fig_pos.height]);
@@ -212,22 +242,27 @@ yyaxis left
     a.plot6=plot(x_matrix(1,:), s_surface_matrix,...
              '-','linewidth',a.lw,'color',[0.4660 0.6740 0.1880]);hold on		  
     a.plot6=plot(x_matrix(1,:), c_surface_matrix,...
-             '-','linewidth',a.lw,'color',[0.8500 0.3250 0.0980]);hold off
-	axis([0 x_matrix(1,end) 0 1.05])
+             '.','linewidth',a.lw,'color',[0.4660 0.6740 0.1880]);hold off
+	grid on
+	grid minor
+		ax = gca;
+	ax.GridAlpha = 0.4;
+	ax.MinorGridAlpha = 0.5;
+	axis([0 1.2 0 1.05])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0.4660 0.6740 0.1880]);
 	ylabel('con or sat (-)','FontSize',a.fs);
 
-
 yyaxis right	
     a.plot6=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              '-','linewidth',a.lw,'color',[0 0.4470 0.7410]);hold off
-	axis([0 x_matrix(1,end) 0 40])
+	axis([0 1.2 0 25])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0 0.4470 0.7410]);
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
-	legend('saturation','concentration','evaporation','FontSize',a.fs)
+	legend('saturation','concentration','evaporation','FontSize',a.fs,'Location','northwest' )
+
 % temperature contour plot    
     % write pressure and conc in matrix form.
     % temp_matrix = reshape(nod(nt).terms{temp_idx},[inp.nn1,inp.nn2]);    
@@ -244,7 +279,28 @@ yyaxis right
     % title('Temperature (°C)');
     % xlabel('x (m)','FontSize',a.fs);
     % ylabel('Elevation (m)','FontSize',a.fs);
-    %% ------------- total solid mass of salt or zoom in vapor vector --------------
+	
+%% -------------  sub 6 velocity vector for each node  --------------
+    a.sub3=subplot('position'...
+         ,[fig_pos.left+0.4,fig_pos.bottom-0.64,...
+          fig_pos.length-0.05,fig_pos.height]);
+    vx_matrix = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1]);
+    vy_matrix = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1]);
+    a.plot3   = quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix);
+	hold on
+	startx    = 0.105:0.1:1.105;
+	starty    = y_ele_matrix(1,11:10:111);
+	a.plot3   = streamline(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix,startx,starty);
+	hold off
+    %a.plot1=plot(eslab(1,:),eslab(2,:),'cx','linewidth',a.lw);
+    get(gca,'xtick');
+    set(gca,'fontsize',a.fs);
+    xlabel('x (m)','FontSize',a.fs);
+    ylabel('Elevation (m)','FontSize',a.fs);
+    title('Velocity')
+    axis([0 1.2 0 0.4])	
+	
+%% ------------- total solid mass of salt or zoom in vapor vector --------------
     a.sub7=subplot('position'...
          ,[fig_pos.left+0.75,fig_pos.bottom,...
           0.17,fig_pos.height]);
@@ -274,7 +330,7 @@ yyaxis right
     title('Vapor flow')
     axis([0.6 1 0.3 0.38])    
     
-    %% ------------- concentration profile or porosity at given x --------------
+%% ------------- concentration profile or porosity at given x --------------
     a.sub8=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.32,...
           0.15,fig_pos.height],'Color', 'none');
@@ -298,7 +354,7 @@ yyaxis right
     legend('x=0.3 m','x=0.6 m','x=0.9 m','x=1.2 m','Location','southeast')
     set(gca, 'XDir','reverse')
 
-    %% ------------- zoom in velocity --------------
+%% ------------- zoom in velocity --------------
     a.sub9=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.64,...
           0.15,fig_pos.height]);
