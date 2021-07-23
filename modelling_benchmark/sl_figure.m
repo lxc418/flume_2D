@@ -125,7 +125,7 @@ yyaxis right
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     ylabel('bottom solute flux (g/day)','FontSize',a.fs);
-    axis([0 1.2 -5 5])
+    axis([0 x_matrix(1,end) -5 5])
 
 	ax = gca;	
 	ax.XAxis.Visible = 'off';
@@ -147,7 +147,7 @@ yyaxis left
     set(gca,'fontsize',a.fs);
     xlabel('x','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
-    axis([0 1.2 0 25])
+    axis([0 x_matrix(1,end) 0 25])
 yyaxis right
     solidmass_matrix_kg = reshape(nod(nt).terms{sm_idx},[inp.nn1,inp.nn2]);
     solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
@@ -157,7 +157,7 @@ yyaxis right
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     ylabel('Solid salt (mm)','FontSize',a.fs);
-    axis([0 1.2 0 5])
+    axis([0 x_matrix(1,end) 0 6])
 	ax = gca;
 	ax.YAxis(1).Color = 'k';
 	ax.YAxis(2).Color = 'r';	
@@ -190,7 +190,7 @@ yyaxis right
     a.plot4=plot(x_matrix(1,:), s_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface saturation (-)','FontSize',a.fs);
-    axis([0 1.2 -0.1 2])
+    axis([0 x_matrix(1,end) -0.1 2])
     yticks([0,0.5,1])
 
 %% -------- sub 4 contour plot on concentration ---------
@@ -231,7 +231,7 @@ yyaxis right
     a.plot5=plot(x_matrix(1,:), c_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface concentration (-)','FontSize',a.fs);
-    axis([0 1.2 -0.05 0.6])
+    axis([0 x_matrix(1,end) -0.05 0.6])
     yticks([0,0.1,0.2,0.3])
     
 %% -------- sub 5 plot on surface sat vs concentration & solid salt vs evp  ---------
@@ -248,7 +248,7 @@ yyaxis left
 		ax = gca;
 	ax.GridAlpha = 0.4;
 	ax.MinorGridAlpha = 0.5;
-	axis([0 1.2 0 1.05])
+	axis([0 x_matrix(1,end) 0 1.05])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0.4660 0.6740 0.1880]);
 	ylabel('con or sat (-)','FontSize',a.fs);
@@ -256,7 +256,7 @@ yyaxis left
 yyaxis right	
     a.plot6=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              '-','linewidth',a.lw,'color',[0 0.4470 0.7410]);hold off
-	axis([0 1.2 0 25])
+	axis([0 x_matrix(1,end) 0 25])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0 0.4470 0.7410]);
     xlabel('x (m)','FontSize',a.fs);
@@ -298,7 +298,7 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([0 1.2 0 0.4])	
+    axis([0 x_matrix(1,end) 0 0.4])	
 	
 %% ------------- total solid mass of salt or zoom in vapor vector --------------
     a.sub7=subplot('position'...
@@ -367,7 +367,7 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([1. 1.2 0.2 0.3])
+    axis([x_matrix(1,end)-0.3 x_matrix(1,end) 0.2 0.3])
     
     
     
@@ -413,3 +413,4 @@ figure
     cbsal.Label.String = 'Saturation (-)';
 scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
 savefig('saturation_contour.fig')	
+,
