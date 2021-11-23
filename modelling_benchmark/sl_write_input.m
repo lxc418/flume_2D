@@ -1,5 +1,7 @@
 clear all
 close all
+run('/storage/macondo/s4524462/SutraLab/mfiles/slsetpath.m')
+
 c=ConstantObj();  % all the constants, we suggest to use c.g rather than 9.81 in the script to enhance readerbility;
 
 %% SUTRA.fil
@@ -28,7 +30,7 @@ fil.export_to_file();
 porosity                    = 0.39;
 c_saltwater_kgPkg           = 0.035;
 % c_freshwater_kgPkg          = 0.0001;
-water_table_m               = 0.23;
+constant_water_table_m      = 0.23;
 
 initial_temperature_C       = 25;
 initial_concentration_kgPkg = 0.035;
@@ -615,13 +617,13 @@ inp.uinc  = uinc;
 
 % DATASET 19:  Data for Specified Pressure Nodes
 %###  [IPBC]                [PBC]                [UBC]
-if water_table_m ==0
+if constant_water_table_m ==0
 	inp.ipbc = '%';
 	inp.pbc  = '%';
 	inp.ubc  = '%';
 	else
 	bottom_nodes                = node_index_mtx_gravity_compensated(ny,:)';  % below 4 metre, greater than 200 m away from the centre
-	pbc(1:nx)                   = water_table_m*c.rhow_pure_water*c.g;
+	pbc(1:nx)                   = constant_water_table_m*c.rhow_pure_water*c.g;
 	ubc(1:nx)                   = c_saltwater_kgPkg;
 
 	inp.ipbc = bottom_nodes;

@@ -13,6 +13,15 @@ y_matrix = reshape(nod(1).terms{y_idx},[inp.nn1,inp.nn2]);
 x_ele_matrix = reshape(ele(1).terms{xele_idx},[inp.nn1-1,inp.nn2-1]);
 y_ele_matrix = reshape(ele(1).terms{yele_idx},[inp.nn1-1,inp.nn2-1]);
 
+%interpolation of saturation and concentration with refined mesh
+x_right_end_m = x_matrix(1,inp.nn2);
+y_left_top_m  = y_matrix(inp.nn1,1);
+y_right_top_m = y_matrix(inp.nn1,end);
+ratio_y_m     = y_right_top/y_left_top;
+    
+[xq,yq]=meshgrid(linspace(0,x_right_end,x_right_end/0.001+1),linspace(0,y_left_top,y_left_top/0.001+1));%1mm mesh	
+yq=yq.*(ratio_y+(1-ratio_y).*(x_right_end-xq)./x_right_end);
+
 %% evaporation data (from bcof without the vapor contribution)
 % evapo_kgs = zeros(time_step,inp.nn2);
 
@@ -125,7 +134,7 @@ yyaxis right
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     ylabel('bottom solute flux (g/day)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) -5 5])
+    axis([0 1.2 -5 5])
 
 	ax = gca;	
 	ax.XAxis.Visible = 'off';
@@ -147,7 +156,7 @@ yyaxis left
     set(gca,'fontsize',a.fs);
     xlabel('x','FontSize',a.fs);
     ylabel('Evt (mm/day)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) 0 25])
+    axis([0 1.2 0 25])
 yyaxis right
     solidmass_matrix_kg = reshape(nod(nt).terms{sm_idx},[inp.nn1,inp.nn2]);
     solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
@@ -157,7 +166,7 @@ yyaxis right
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
     ylabel('Solid salt (mm)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) 0 6])
+    axis([0 1.2 0 5])
 	ax = gca;
 	ax.YAxis(1).Color = 'k';
 	ax.YAxis(2).Color = 'r';	
@@ -168,9 +177,27 @@ yyaxis right
           fig_pos.length,fig_pos.height]);		  
     % write pressure and conc in matrix form.
     s_matrix  = reshape(nod(nt).terms{s_idx},[inp.nn1,inp.nn2]);
+	sq = griddata(x_matrix,y_matrix,s_matrix,xq,yq,'natural');    
+	
+%calculating the first vaporization plane location with refined mesh
+   
+% for ii=1:1201 %p.neo   % loop of node on y direction 
+    % for jj=1:401 %p.nnv
+% %        if nod(i).terms{6}(k*inp.nn1+1-j)>=inp.swres1 % residual saturation     
+        % if sq(402-jj,ii)>=inp.swres1 % residual saturation 
+    % % warning: this check is from the top of the column to the bottom
+         % vapori_plane_y(ii)=yq(402-jj,ii);
+        % break
+        % end %if
+    % end % j=1:p.nnv
+% end % k=1:p.nnh
+%     vapori_plane = vapori_plane_y;
+
 yyaxis left
     vapori_plane = qv(nt).vapori_plane_y;
-    a.plot4=contourf(x_matrix,y_matrix,s_matrix,'EdgeColor','none');hold on
+	
+	a.plot4=contourf(xq,yq,sq,'EdgeColor','none');hold on	
+%    a.plot4=contourf(x_matrix,y_matrix,s_matrix,'EdgeColor','none');hold on
     a.plot4=plot(x_matrix(1,:), vapori_plane,...
              	'-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold off
 %    scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
@@ -190,7 +217,7 @@ yyaxis right
     a.plot4=plot(x_matrix(1,:), s_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface saturation (-)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) -0.1 2])
+    axis([0 1.2 -0.1 2])
     yticks([0,0.5,1])
 
 %% -------- sub 4 contour plot on concentration ---------
@@ -200,8 +227,11 @@ yyaxis right
     % write pressure and conc in matrix form.
     c_matrix = reshape(nod(nt).terms{c_idx},[inp.nn1,inp.nn2]);
 yyaxis left
-    a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
-    a.plot4=plot(x_matrix(1,:), vapori_plane,...
+
+    cq = griddata(x_matrix,y_matrix,c_matrix,xq,yq,'natural');
+    a.plot5=contourf(xq,yq,cq,'EdgeColor','none');hold on
+%    a.plot5=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
+    a.plot5=plot(x_matrix(1,:), vapori_plane,...
              	'-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold on
     qvx_mtx = qv(nt).qvx; % vector of vapor is acquired from the concentration difference bewteen two nodes,
     qvy_mtx = qv(nt).qvy; % which is used to calculate the vector in element center.
@@ -231,7 +261,7 @@ yyaxis right
     a.plot5=plot(x_matrix(1,:), c_surface_matrix,...
              'w-','linewidth',a.lw);hold off
     % ylabel('surface concentration (-)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) -0.05 0.6])
+    axis([0 1.2 -0.05 0.6])
     yticks([0,0.1,0.2,0.3])
     
 %% -------- sub 5 plot on surface sat vs concentration & solid salt vs evp  ---------
@@ -248,7 +278,7 @@ yyaxis left
 		ax = gca;
 	ax.GridAlpha = 0.4;
 	ax.MinorGridAlpha = 0.5;
-	axis([0 x_matrix(1,end) 0 1.05])
+	axis([0 1.2 0 1.05])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0.4660 0.6740 0.1880]);
 	ylabel('con or sat (-)','FontSize',a.fs);
@@ -256,7 +286,7 @@ yyaxis left
 yyaxis right	
     a.plot6=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              '-','linewidth',a.lw,'color',[0 0.4470 0.7410]);hold off
-	axis([0 x_matrix(1,end) 0 25])
+	axis([0 1.2 0 25])
     set(gca,'fontsize',a.fs);
 	set(gca,'YColor',[0 0.4470 0.7410]);
     xlabel('x (m)','FontSize',a.fs);
@@ -298,7 +328,7 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([0 x_matrix(1,end) 0 0.4])	
+    axis([0 1.2 0 0.4])	
 	
 %% ------------- total solid mass of salt or zoom in vapor vector --------------
     a.sub7=subplot('position'...
@@ -367,7 +397,7 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([x_matrix(1,end)-0.3 x_matrix(1,end) 0.2 0.3])
+    axis([1. 1.2 0.2 0.3])
     
     
     
@@ -390,19 +420,19 @@ close(a.fig);
 % savefig('pressure_contour.fig')						 
 
 figure
-[csal,hcsal] = contourf(x_matrix,y_matrix,c_matrix);
+[csal,hcsal] = contourf(xq,yq,cq);
     hold on
     set(hcsal,'EdgeColor','none');
     color = jet;
     colormap(gca,color);
     cbsal = colorbar;
-	caxis([0.035 0.264])
+	caxis([0 0.246])
     cbsal.Label.String = 'Concentration (-)';
 scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
 savefig('concentration_contour.fig')						 
 
 figure
-[csal,hcsal] = contourf(x_matrix,y_matrix,s_matrix);
+[csal,hcsal] = contourf(xq,yq,sq);
     hold on
     set(hcsal,'EdgeColor','none');
     color = jet;
@@ -413,4 +443,3 @@ figure
     cbsal.Label.String = 'Saturation (-)';
 scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
 savefig('saturation_contour.fig')	
-,
