@@ -328,7 +328,7 @@ yyaxis right
 %    xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Vapor flow')
-    axis([0.6 1 0.3 0.38])    
+    axis([0.7 1.1 0.28 0.38])    
     
 %% ------------- concentration profile or porosity at given x --------------
     a.sub8=subplot('position'...

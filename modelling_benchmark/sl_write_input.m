@@ -396,7 +396,7 @@ inp.itt    = 2;
       % 2      1    9    1      2     1        1         1
 inp.met    = 2;
 inp.mar    = 1;
-inp.msr    = 9;
+inp.msr    = 10;
 inp.msc    = 1;			
 inp.mht    = 2;
 inp.mvt    = 1;				
@@ -602,8 +602,8 @@ inp.pmin    =zeros(ne,1)+permeability_sand_m2;
 inp.anglex  =zeros(ne,1);
 inp.almax   =zeros(ne,1)+0.01;
 inp.almin   =zeros(ne,1)+0.01;
-inp.atmax   =zeros(ne,1)+0.01;
-inp.atmin   =zeros(ne,1)+0.01;
+inp.atmax   =zeros(ne,1)+0.001;
+inp.atmin   =zeros(ne,1)+0.001;
 
 % note: for SUTRASET when node number is negative, the second input is surface area of the node
 % and the third input is the thickness of the cell.
@@ -623,7 +623,7 @@ if constant_water_table_m ==0
 	inp.ubc  = '%';
 	else
 	bottom_nodes                = node_index_mtx_gravity_compensated(ny,:)';  % below 4 metre, greater than 200 m away from the centre
-	pbc(1:nx)                   = constant_water_table_m*c.rhow_pure_water*c.g;
+	pbc(1:nx)                   = constant_water_table_m*(c.rhow_pure_water+700*c_saltwater_kgPkg)*c.g;
 	ubc(1:nx)                   = c_saltwater_kgPkg;
 
 	inp.ipbc = bottom_nodes;
@@ -665,7 +665,7 @@ inp.export_to_file();
 
 
 % setting the initial pressure as hydrostatic, in particular at the sandy aquifer, the silt layer will be overwritten
-pm1_mtx_gravity_pa= - (- initial_head_aquifer_m + y_nod_mtx)*c.g*c.rhow_pure_water;
+pm1_mtx_gravity_pa= - (- initial_head_aquifer_m + y_nod_mtx)*c.g*(c.rhow_pure_water+700*c_saltwater_kgPkg);%sutra manual p15
 
 
 % mask_nod_mtx_silt_layer_gravity_compensated = y_nod_mtx_gravity_compensated_m  > -6  ;   % mask matrix, for nod matrix 
