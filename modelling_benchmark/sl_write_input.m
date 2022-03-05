@@ -1,7 +1,6 @@
 clear all
 close all
 run('/storage/macondo/s4524462/SutraLab/mfiles/slsetpath.m')
-
 c=ConstantObj();  % all the constants, we suggest to use c.g rather than 9.81 in the script to enhance readerbility;
 
 %% SUTRA.fil
@@ -31,6 +30,8 @@ porosity                    = 0.39;
 c_saltwater_kgPkg           = 0.035;
 % c_freshwater_kgPkg          = 0.0001;
 constant_water_table_m      = 0.23;
+relative_humidity			= 0.59;
+aero_resistance				= 250;						   						 
 
 initial_temperature_C       = 25;
 initial_concentration_kgPkg = 0.035;
@@ -181,7 +182,7 @@ uinc = (-iqcp + qinc-1)./ny;
 inp = vapinpObj('FLUME','read_from_file','no');   % setup a empty inpObj
 
 % ##  DATASET 1
-inp.title1 = '2-D flume simulation for medium sand (2021)';
+inp.title1 = '2-D flume simulation for sand (2021)';
 inp.title2 = 'Generating input using sutralab';
 
 % ##  DATASET 2A
@@ -398,7 +399,7 @@ inp.met    = 2;
 inp.mar    = 1;
 inp.msr    = 10;
 inp.msc    = 1;			
-inp.mht    = 2;
+inp.mht    = 0;
 inp.mvt    = 1;				
 inp.mft    = 1;	
 inp.mrk    = 1;	
@@ -442,11 +443,11 @@ inp.ite    = 0;
 % ##              SEE PAGE
 % ##         [TMA]       [TMI]      [ALF]        [RS]        [RH]        [AP]        [BP]       [U2]       [TSD]    [SCF]
             % 25.D0      25.0       0.2       58.67214    0.52     17.8636        0.044     329.5       24.2D0      0.1818
-inp.tma   = 25.;
-inp.tmi   = 25.;
+inp.tma   = initial_temperature_C;
+inp.tmi   = initial_temperature_C;
 inp.alf   = 0.2;
 inp.rs    = 58.67214;			
-inp.rh    = 0.52;
+inp.rh    = relative_humidity;
 inp.ap    = 17.8636;					
 inp.bp    = 0.044;					
 inp.u2    = 329.5;					
@@ -459,7 +460,7 @@ inp.scf   = 0.1818;
 % ##     SWRAT..  (-)   PARAMETER TO SWICH ON (1.D) OR OFF(0.D0) THE TEMPERATURE CHANGE ON THE SURFACE
 % ##         [RAVT]    [RAVS]   [SWRAT]
            % 206.D0     50.D0     0.D0
-inp.ravt   = 85.;
+inp.ravt   = aero_resistance;
 inp.ravs   = 50.;
 inp.swart  = 0.;
           
@@ -665,7 +666,7 @@ inp.export_to_file();
 
 
 % setting the initial pressure as hydrostatic, in particular at the sandy aquifer, the silt layer will be overwritten
-pm1_mtx_gravity_pa= - (- initial_head_aquifer_m + y_nod_mtx)*c.g*(c.rhow_pure_water+700*c_saltwater_kgPkg);%sutra manual p15
+pm1_mtx_gravity_pa= - (- initial_head_aquifer_m + y_nod_mtx)*c.g*(c.rhow_pure_water+700*initial_concentration_kgPkg);%sutra manual p15
 
 
 % mask_nod_mtx_silt_layer_gravity_compensated = y_nod_mtx_gravity_compensated_m  > -6  ;   % mask matrix, for nod matrix 
