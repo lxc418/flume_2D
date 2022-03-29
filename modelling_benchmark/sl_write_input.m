@@ -1,6 +1,6 @@
 clear all
 close all
-run('/storage/macondo/s4524462/SutraLab/mfiles/slsetpath.m')
+run('/storage/macondo/s4524462/SutraLab/mfiles/slsetpath.m')																																	   
 c=ConstantObj();  % all the constants, we suggest to use c.g rather than 9.81 in the script to enhance readerbility;
 
 %% SUTRA.fil
@@ -29,17 +29,20 @@ fil.export_to_file();
 porosity                    = 0.39;
 c_saltwater_kgPkg           = 0.035;
 % c_freshwater_kgPkg          = 0.0001;
-constant_water_table_m      = 0.23;
-relative_humidity			= 0.59;
-aero_resistance				= 250;						   						 
+constant_water_table_m      = 0.24;
+relative_humidity			= 0.57;
+aero_resistance				= 86;
+% choose boundary condition from 'right_side', 'left_side', 'bottom','both_side'.
+pressure_boundary			='right_side';
+boundary_height				=0.05;
 
-initial_temperature_C       = 25;
+initial_temperature_C       = 23.9;
 initial_concentration_kgPkg = 0.035;
-initial_head_aquifer_m      = 0.3;
-permeability_sand_m2        = 5.67e-11;
+initial_head_aquifer_m      = 0.24;
+permeability_sand_m2        = 1.e-9;
 
-time_scale=10; 
-time_cycle=500000; %around 6 days
+time_scale=5; 
+time_cycle=11250; %around 7 days
 diffusivity=1e-9;
 
 %% input for meshing 
@@ -47,25 +50,21 @@ BLOCK = 1; %input block number (every block must be a quadrilateral and the left
 %								should be parallel to the y axis)
 x1  = 0;
 x2  = 1.2;
-nex = 120; %Number of segments along x
+nex = 400; %Number of segments along x
 
 y(1,1)=0;
 y(1,2)=0;
 
-ney_section(1)=10; %Number of segments between y1 and y2, must be consistente in every block
+ney_section(1)=50; %Number of segments between y1 and y2, must be consistente in every block
 
-y(2,1)=0.2;
-y(2,2)=0.1;
+y(2,1)=0.305;
+y(2,2)=0.2;
 
-ney_section(2)=20;
+ney_section(2)=50;
 
-y(3,1)=0.3;
-y(3,2)=0.2;
+y(3,1)=0.405;
+y(3,2)=0.3;
 
-ney_section(3)=30;
-
-y(4,1)=0.4;
-y(4,2)=0.3;
 
 dz=0.01; %default
 
@@ -182,7 +181,7 @@ uinc = (-iqcp + qinc-1)./ny;
 inp = vapinpObj('FLUME','read_from_file','no');   % setup a empty inpObj
 
 % ##  DATASET 1
-inp.title1 = '2-D flume simulation for sand (2021)';
+inp.title1 = '2-D flume simulation for medium sand (2021)';
 inp.title2 = 'Generating input using sutralab';
 
 % ##  DATASET 2A
@@ -330,7 +329,7 @@ inp.rhos   = 2600.;   %solid density of sodium chloride
 
 inp.adsmod = 'FREUNDLICH';
 %inp.adsmod = 'NONE';
-inp.chi1   = 1.e-48;
+inp.chi1   = 1.e-49;
 inp.chi2   = 0.05 ;
 
 %##  DATASET 12:  Production of Energy or Solute Mass
@@ -462,7 +461,7 @@ inp.scf   = 0.1818;
            % 206.D0     50.D0     0.D0
 inp.ravt   = aero_resistance;
 inp.ravs   = 50.;
-inp.swart  = 0.;
+inp.swart  = 0.;  
           
 % ##  DATASET 13G: SOIL THERMO PROPERTY TERM           
 % ##     HSC  -- HEAT SOURCE FROM ATMOSPHERE G [WATT/M2]
@@ -492,8 +491,8 @@ inp.br   = -1.04;
 % ##  [SWRES1] [AA1]  [VN1]  [SWRES2]    [AA2]   [VN2]  [SWRES3]  [LAM3]   [PHYB3]  [SWRES4]   [LAM4]  [PHYB4]  [PHY0]   [ECTO]
       % 0.06   14.5D0  8.5D0    0.06      15.D0   9.2D0    0.09D0   8.0D0   0.2D0   0.08D0     4.2D0   0.045    5.0D4     0.5D0
 inp.swres1  = 0.06; 
-inp.aa1     = 14.5;   
-inp.vn1     = 8.5;
+inp.aa1     = 15.5;   
+inp.vn1     = 8.;
 inp.swres2  = 0.;
 inp.aa2     = 0.;
 inp.vn2     = 0.;
@@ -622,15 +621,79 @@ if constant_water_table_m ==0
 	inp.ipbc = '%';
 	inp.pbc  = '%';
 	inp.ubc  = '%';
-	else
+	
+	elseif strcmp(pressure_boundary,'bottom')==1
 	bottom_nodes                = node_index_mtx_gravity_compensated(ny,:)';  % below 4 metre, greater than 200 m away from the centre
 	pbc(1:nx)                   = constant_water_table_m*(c.rhow_pure_water+700*c_saltwater_kgPkg)*c.g;
 	ubc(1:nx)                   = c_saltwater_kgPkg;
-
 	inp.ipbc = bottom_nodes;
 	inp.pbc  = pbc';
 	inp.ubc  = ubc';
 	inp.npbc = length(inp.pbc);
+	
+	elseif strcmp(pressure_boundary,'right_side')==1
+	% for i = 1:inp.nn2-1
+	% [yminValue(i), yclosestIndex(i)]=min(abs(0.25 - y_ele_matrix(:,i))); %get the node closest to water table by comparing y 
+	% x_water_table(i) = x_ele_matrix(yclosestIndex(i),i);
+	% y_water_table(i) = y_ele_matrix(yclosestIndex(i),i);
+	% end
+	right_side_nodes            = node_index_mtx_gravity_compensated(:,end)';  
+	right_boundary_nodes		= right_side_nodes;
+	right_boundary_nodes(y_nod_mtx(right_side_nodes)>boundary_height) = [];	
+	ipbc						= right_boundary_nodes;
+	right_boundary_nodes_y 	    = y_nod_mtx(right_boundary_nodes);
+	boundary_nodes_y			= right_boundary_nodes_y;
+		if boundary_nodes_y < constant_water_table_m
+			pbc            	    = (constant_water_table_m-boundary_nodes_y)*(c.rhow_pure_water+700*c_saltwater_kgPkg)*c.g;
+		else 
+			pbc                 = (constant_water_table_m-boundary_nodes_y)*c.rhow_pure_water*c.g;
+		end
+	ubc(1:length(pbc))          = c_saltwater_kgPkg;
+	inp.ipbc = ipbc';
+	inp.pbc  = pbc';
+	inp.ubc  = ubc';
+	inp.npbc = length(inp.pbc);	
+	
+	elseif strcmp(pressure_boundary,'left_side')==1
+	left_side_nodes             = node_index_mtx_gravity_compensated(:,1)';  
+	left_boundary_nodes			= left_side_nodes;
+	left_boundary_nodes(y_nod_mtx(left_side_nodes)>boundary_height)=[];	
+	% left_side_nodes(1)			= []; %choose if exclude the surface node
+	ipbc						= left_boundary_nodes;
+	left_boundary_nodes_y 		= y_nod_mtx(left_boundary_nodes);
+	boundary_nodes_y			= left_boundary_nodes_y;
+		if boundary_nodes_y < constant_water_table_m
+			pbc            		= (constant_water_table_m-boundary_nodes_y)*(c.rhow_pure_water+700*c_saltwater_kgPkg)*c.g;
+		else 
+			pbc             	= (constant_water_table_m-boundary_nodes_y)*c.rhow_pure_water*c.g;
+		end
+	ubc(1:length(pbc))          = c_saltwater_kgPkg;
+	inp.ipbc = ipbc';
+	inp.pbc  = pbc';
+	inp.ubc  = ubc';
+	inp.npbc = length(inp.pbc);	
+	
+	elseif strcmp(pressure_boundary,'both_side')==1
+	left_side_nodes             = node_index_mtx_gravity_compensated(:,1)';  
+	left_boundary_nodes			= left_side_nodes;
+	left_boundary_nodes(y_nod_mtx(left_side_nodes)>boundary_height)=[];	
+	right_side_nodes            = node_index_mtx_gravity_compensated(:,end)';  	
+	right_boundary_nodes		= right_side_nodes;
+	right_boundary_nodes(y_nod_mtx(right_side_nodes)>boundary_height) = [];	
+	ipbc						= [left_boundary_nodes,right_boundary_nodes];
+	left_boundary_nodes_y 			= y_nod_mtx(left_boundary_nodes);
+	right_boundary_nodes_y 			= y_nod_mtx(right_boundary_nodes);
+	boundary_nodes_y				= [left_boundary_nodes_y,right_boundary_nodes_y];
+		if boundary_nodes_y < constant_water_table_m
+			pbc            	    = (constant_water_table_m-boundary_nodes_y)*(c.rhow_pure_water+700*c_saltwater_kgPkg)*c.g;
+		else 
+			pbc                 = (constant_water_table_m-boundary_nodes_y)*c.rhow_pure_water*c.g;
+		end
+	ubc(1:length(pbc))          = c_saltwater_kgPkg;
+	inp.ipbc = ipbc';
+	inp.pbc  = pbc';
+	inp.ubc  = ubc';
+	inp.npbc = length(inp.pbc);	
 end  
 
 %mask_mtx_aquifer_boundary_gravity_compensated_left = and(y_nod_mtx_gravity_compensated_m<-4, x_nod_mtx_gravity_compensated_m<0.01);
