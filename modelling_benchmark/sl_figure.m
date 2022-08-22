@@ -3,19 +3,11 @@
 % fclose('all');
 c=ConstantObj();
 
-%% choose boundary condition 							 
-if abs(inp.ipbc(1)-inp.ipbc(2))==1
-boundary_condition = 2;%1/bottom boundary   2/right side boundary 
-flux_plot_level_y  = 0.01;%set the level for streamline plotting 	
-else
-boundary_condition = 1;
-end		
-
 time_step = length(et);
 time_day  = [bcof.tout]/3600/24;%second to day
 time_nod_day = arrayfun(@(y) y.tout,nod) * c.dayPsec;
-water_table  = inp.pbc/9800;
-
+water_table  = inp.pbc/(c.rhow_pure_water+700*0.035);							
+							
 x_matrix = reshape(nod(1).terms{x_idx},[inp.nn1,inp.nn2]);%inp.nn2 is number of nodes in x direction 
 y_matrix = reshape(nod(1).terms{y_idx},[inp.nn1,inp.nn2]);
 x_ele_matrix = reshape(ele(1).terms{xele_idx},[inp.nn1-1,inp.nn2-1]);
@@ -24,6 +16,14 @@ x_area_m2    = reshape(mesh.area_xz,[inp.nn2,inp.nn1]);
 x_area_m2    = x_area_m2';
 y_area_m2    = reshape(mesh.area_yz,[inp.nn2,inp.nn1]);
 y_area_m2	 = y_area_m2';
+
+%% boundary condition 							 
+if abs(inp.ipbc(1)-inp.ipbc(2))==1
+boundary_condition = 2;%1/bottom boundary   2/right side boundary 
+flux_plot_level_y  = y_ele_matrix(2,end);%set the level for streamline plotting (the bottom ele cannot used to plot streamline)
+else
+boundary_condition = 1;
+end	
 
 %boundary area
 top_boundary_x_area_m2   = x_area_m2(1,:);
@@ -77,9 +77,9 @@ if boundary_condition == 1
 		y_flux_level = y_ele_matrix(2,:);
 	else
 		for i = 1:inp.nn2-1
-			[yminValue(i), yclosestIndex(i)]=min(abs(flux_plot_level_y - y_ele_matrix(:,i))); %get the node closest to water table by comparing y 
-			x_flux_level(i) = x_ele_matrix(yclosestIndex(i),i);
-			y_flux_level(i) = y_ele_matrix(yclosestIndex(i),i);
+			[yminValue(i), yclosestIndex_plot(i)]=min(abs(flux_plot_level_y - y_ele_matrix(:,i))); %get the node closest to water table by comparing y 
+			x_flux_level(i) = x_ele_matrix(yclosestIndex_plot(i),i);
+			y_flux_level(i) = y_ele_matrix(yclosestIndex_plot(i),i);
 		end
 end
 
@@ -88,8 +88,11 @@ end
 for i=2:time_step %The first time step starts from the initial condition of not reaching equilibrium, so start from step 2
 
 	evapo_mmday(1,:)  		 =  reshape(et(1).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
+	evapo_mmday(1,(evapo_mmday(1,:)==0)) = max(evapo_mmday(1,:)); %make the surface below the water table has the same evp as full saturated surface 
+															% specifically for case with inundation
 	total_evapo_mmday(1)     =  sum (evapo_mmday(1,:))./inp.nn2; %the evp rate from the whole surface
 	evapo_mmday(i,:)  		 =  reshape(et(i).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
+	evapo_mmday(i,(evapo_mmday(i,:)==0)) = max(evapo_mmday(i,:));
 	total_evapo_mmday(i)     =  sum (evapo_mmday(i,:))./inp.nn2;%cannot use if the mesh along x is not even
 	
     cumulative_evapo_mm(1)   =  total_evapo_mmday(1)*inp.scalt*inp.nbcfpr*c.dayPsec;
@@ -106,15 +109,27 @@ for i=2:time_step
 	
 end
 % cumulative_bottom or side solution/salt mass (from bcop)
-for i=2:time_step
-	boundary_salt_kgsm2(i)  	   = sum(salt_kgsm2(i,:)); 
-	boundary_solution_ms (i)       = sum(solution_ms(i,:));
-	cumu_boundary_salt_kgm2(1)	   = 0;
-	cumu_boundary_solution_m(1)    = 0;
-	cumu_boundary_salt_kgm2(i)	   = boundary_salt_kgsm2(i)*inp.scalt*inp.nbcfpr + cumu_boundary_salt_kgm2(i-1);
-	cumu_boundary_solution_m(i)    = boundary_solution_ms(i)*inp.scalt*inp.nbcfpr + cumu_boundary_solution_m(i-1);
+if boundary_condition == 1
+	for i=2:time_step
+		boundary_salt_kgsm2(i)  	   = sum(salt_kgs(i,:))./sum(bottom_boundary_x_area_m2); 
+		boundary_solution_ms(i)        = sum(solution_kgs(i,:))./(c.rhow_pure_water+700*0.035)./sum(bottom_boundary_x_area_m2);
+		cumu_boundary_salt_kgm2(1)	   = 0;
+		cumu_boundary_solution_m(1)    = 0;
+		cumu_boundary_salt_kgm2(i)	   = boundary_salt_kgsm2(i)*inp.scalt*inp.nbcfpr + cumu_boundary_salt_kgm2(i-1);
+		cumu_boundary_solution_m(i)    = boundary_solution_ms(i)*inp.scalt*inp.nbcfpr + cumu_boundary_solution_m(i-1);
+	end
 end
 
+if boundary_condition == 2
+	for i=2:time_step
+		boundary_salt_kgsm2(i)  	   = sum(salt_kgs(i,:))./sum(right_boundary_y_area_m2); 
+		boundary_solution_ms(i)        = sum(solution_kgs(i,:))./(c.rhow_pure_water+700*0.035)./sum(right_boundary_y_area_m2);
+		cumu_boundary_salt_kgm2(1)	   = 0;
+		cumu_boundary_solution_m(1)    = 0;
+		cumu_boundary_salt_kgm2(i)	   = boundary_salt_kgsm2(i)*inp.scalt*inp.nbcfpr + cumu_boundary_salt_kgm2(i-1);
+		cumu_boundary_solution_m(i)    = boundary_solution_ms(i)*inp.scalt*inp.nbcfpr + cumu_boundary_solution_m(i-1);
+	end
+end
 %% plot control
 fig_pos.left   = 0.05;
 fig_pos.bottom = 0.7;
@@ -321,8 +336,8 @@ yyaxis right
 	x_flux_matrix_ms  = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
 	y_flux_matrix_ms  = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
 		for i=1:inp.nn2-1
-			x_flux_ms(i) = x_flux_matrix_ms(yclosestIndex(i),i);
-			y_flux_ms(i) = y_flux_matrix_ms(yclosestIndex(i),i);
+			x_flux_ms(i) = x_flux_matrix_ms(yclosestIndex_plot(i),i);
+			y_flux_ms(i) = y_flux_matrix_ms(yclosestIndex_plot(i),i);
 		end
 	flux_level_ms = y_flux_ms./abs(y_flux_ms).*(x_flux_ms.^2+y_flux_ms.^2).^0.5;	
     a.plot2=plot(x_ele_matrix(1,:), flux_level_ms,...
@@ -450,7 +465,7 @@ yyaxis right
              % 'w-','linewidth',a.lw);hold off
     % ylabel('surface concentration (-)','FontSize',a.fs);
 	% yticks([0,0.1,0.2,0.3])
-    axis([0 x_matrix(1,end) 0 0.4])
+    axis([0 x_matrix(1,end) 0 y_matrix(end,1)])
     
 %% -------- sub 5 plot on surface sat vs concentration & solid salt vs evp  ---------
     a.sub5=subplot('position'...
@@ -515,7 +530,7 @@ yyaxis right
     xlabel('x (m)','FontSize',a.fs);
     ylabel('Elevation (m)','FontSize',a.fs);
     title('Velocity')
-    axis([0 x_matrix(1,end) 0 0.4])	
+    axis([0 x_matrix(1,end) 0 y_matrix(end,1)])	
 	
 %% ------------- sub 7 total solid mass of salt or zoom in vapor vector --------------
     a.sub7=subplot('position'...
