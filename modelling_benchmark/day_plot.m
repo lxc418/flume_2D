@@ -3,7 +3,7 @@
 % load plot.mat
 % fclose('all');
 c=ConstantObj();
-day_output = [1,6,11,30];%set days need to be plotted			 																  					 																  		
+day_output = [7];%set days need to be plotted			 																  					 																  		
 
 time_step = length(et);
 time_day  = [bcof.tout]/3600/24;%second to day
@@ -74,8 +74,11 @@ end
 for i=2:time_step %The first time step starts from the initial condition of not reaching equilibrium, so start from step 2
 
 	evapo_mmday(1,:)  		 =  reshape(et(1).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
+	evapo_mmday(1,(evapo_mmday(1,:)==0)) = max(evapo_mmday(1,:)); %make the surface below the water table has the same evp as full saturated surface 
+															% specifically for case with inundation
 	total_evapo_mmday(1)     =  sum (evapo_mmday(1,:))./inp.nn2; %the evp rate from the whole surface
 	evapo_mmday(i,:)  		 =  reshape(et(i).terms{et_idx},[1,inp.nn2])*c.ms2mmday;
+	evapo_mmday(i,(evapo_mmday(i,:)==0)) = max(evapo_mmday(i,:));
 	total_evapo_mmday(i)     =  sum (evapo_mmday(i,:))./inp.nn2;%cannot use if the mesh along x is not even
 	
     cumulative_evapo_mm(1)   =  total_evapo_mmday(1)*inp.scalt*inp.nbcfpr*c.dayPsec;
@@ -102,7 +105,8 @@ set (gcf,'Position',[0,0,1920,1080]); %resolution 1080p
 % set(gcf,'Units','normalized', 'OuterPosition',[0 0 1 1]);  % maximize the plotting figure
 
 %calculate time_step for output
-timestep_output = round(day_output*c.secPday/inp.nprint/inp.scalt)+1;
+timestep_output = round(day_output*c.secPday/inp.nprint/inp.scalt)+1;%jump the first timestep which is 1 second
+timestep_output (timestep_output>time_step)=time_step;
 % timestep_output = time_step; %just plot the end of simulation
 
 for nt = timestep_output
