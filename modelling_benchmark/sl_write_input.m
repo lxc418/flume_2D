@@ -34,6 +34,8 @@ relative_humidity			= 0.57;
 aero_resistance				= 86;
 % choose boundary condition from 'right_side', 'left_side', 'bottom','both_side'.
 pressure_boundary			='right_side';
+% boundary_height determines the inlet size at the side boundary (not valid under 'bottom' condition)
+% should be the same as the boundary height if the entire side is the pressure boundary
 boundary_height				=0.05;
 
 initial_temperature_C       = 23.9;

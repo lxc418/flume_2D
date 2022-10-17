@@ -3,7 +3,7 @@
 % load plot.mat
 % fclose('all');
 c=ConstantObj();
-day_output = [7];%set days need to be plotted			 																  					 																  		
+day_output = [10];%set days need to be plotted			 																  					 																  		
 
 time_step = length(et);
 time_day  = [bcof.tout]/3600/24;%second to day
@@ -118,7 +118,7 @@ for nt = timestep_output
     vy_matrix = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1]);
 %% -------------  sub 1 sat & evt  ---------------------
     a.sub1=subplot('position'...
-         ,[fig_pos.left+0.35,fig_pos.bottom+fig_pos.height/2+0.005,...
+         ,[fig_pos.left+0.45,fig_pos.bottom+fig_pos.height/2+0.005,...
           fig_pos.length-0.05,fig_pos.height/2]);
 yyaxis left
     a.plot1=plot(x_matrix(1,:), s_surface_matrix,...
@@ -129,8 +129,8 @@ yyaxis left
 	axis([0 x_matrix(1,end) 0 1])
     set(gca,'fontsize',a.fs,'XTickLabel',{[]});
 	set(gca,'YColor',[0.4660 0.6740 0.1880]);
-    yticks([0.5,1])
-	ylabel({'Saturation';'(-)'},'FontSize',a.fs);		  
+    yticks([0,0.5,1])
+	ylabel({'Saturation (-)'},'FontSize',a.fs);		  
 yyaxis right		   
     a.plot1=plot(x_matrix(1,:), evapo_mmday(nt,:),...
              '-','linewidth',a.lw,'color',[0 0.4470 0.7410]);hold off
@@ -143,13 +143,13 @@ yyaxis right
     set(gca,'fontsize',a.fs,'XTickLabel',{[]});
     % xlabel('x','FontSize',a.fs);
 	set(gca,'YColor',[0 0.4470 0.7410]);
-	yticks([5,10])
+	yticks([0,5,10])
     ylabel({'Evt';'(mm/day)'},'FontSize',a.fs);
     axis([0 x_matrix(1,end) 0 10])
 		  
 %% -------------  sub 2 Salinity & solid salt  ---------------------
     a.sub2=subplot('position'...
-         ,[fig_pos.left+0.35,fig_pos.bottom,...
+         ,[fig_pos.left+0.05,fig_pos.bottom+fig_pos.height/2+0.005,...
           fig_pos.length-0.05,fig_pos.height/2]);
 yyaxis left	  
     a.plot2=plot(x_matrix(1,:), c_surface_matrix,...
@@ -161,7 +161,7 @@ yyaxis left
     yticks([0,100,200,300])
     set(gca,'fontsize',a.fs,'XTickLabel',{[]});
 	set(gca,'YColor',[0.4940 0.1840 0.5560]);
-	ylabel({'Salinity';'(ppt)'},'FontSize',a.fs);
+	ylabel({'Salinity (ppt)'},'FontSize',a.fs);
 yyaxis right
     solidmass_matrix_kg = reshape(nod(nt+1).terms{sm_idx},[inp.nn1,inp.nn2]);
     solidmass_surface_kg(1:inp.nn2) = solidmass_matrix_kg(inp.nn1,:);
@@ -170,16 +170,16 @@ yyaxis right
              'r-','linewidth',a.lw);hold off
     get(gca,'xtick');
     set(gca,'fontsize',a.fs,'XTickLabel',{[]});
-    ylabel({'Solid salt';'(mm)'},'FontSize',a.fs);
-    axis([0 x_matrix(1,end) 0 0.3])
-    yticks([0,0.1,0.2,0.3])
+    ylabel({'Solid salt (mm)'},'FontSize',a.fs);
+    axis([0 x_matrix(1,end) 0 0.15])
+    yticks([0,0.05,0.1,0.15])
 	set(gca,'YColor','r');
 	grid on
 	% grid minor
    
 %% -------- sub 3 concentration contour and streamline ---------
     a.sub3=subplot('position'...
-         ,[fig_pos.left+0.35,fig_pos.bottom-0.205,...
+         ,[fig_pos.left+0.05,fig_pos.bottom-0.11,...
           fig_pos.length-0.015,0.2]);
 % plot log contour
    a.plot3=contourf(x_matrix,y_matrix,log10(c_matrix+1-inp.ubc(1)*1000),'LevelStep',0.005,'LineStyle','None');hold on
@@ -214,7 +214,6 @@ yyaxis right
     % a.plot3=quiver(x_ele_matrix,y_ele_matrix,qvx_plot_mtx,qvy_plot_mtx,'k-'); %plot vapor flow vector
 	% hold on	
     a.plot3   = quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix);
-    % a.plot3   = quiver(x_ele_matrix([1:10,10:8:end],1:20:end),y_ele_matrix([1:10,10:8:end],1:20:end),vx_matrix([1:10,10:8:end],1:20:end),vy_matrix([1:10,10:8:end],1:20:end));%plot quiver with larger space
 	hold on
 
     get(gca,'xtick');
@@ -249,10 +248,10 @@ yyaxis right
 	hold off
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
-	% xlabel('x (m)','FontSize',a.fs);
+	xlabel('x (m)','FontSize',a.fs);
     ylabel('z (m)','FontSize',a.fs);
     axis([0 x_matrix(1,end) 0 y_matrix(end,1)+0.01])	
-    set(gca,'fontsize',a.fs,'XTickLabel',{[]});
+    % set(gca,'fontsize',a.fs,'XTickLabel',{[]});
 	
 %calculate stream line travel time 	
 	for l = 1:smline_num
@@ -299,62 +298,60 @@ yyaxis right
 end 
 	txt_name=sprintf('day_%.2f.txt',nod(nt+1).tout*c.dayPsec);
 	writematrix(total_time',txt_name,'Delimiter','tab');
+	
+%% -------- sub 3 contour plot on Saturation --------- 
+    a.sub9=subplot('position'...
+         ,[fig_pos.left+0.45,fig_pos.bottom-0.11,...
+          fig_pos.length-0.015,0.2]);	  
+    % write pressure and conc in matrix form.
+% yyaxis left
+    vapori_plane = qv(nt).vapori_plane_y;
+    a.plot9=contourf(x_matrix,y_matrix,s_matrix,'EdgeColor','none');
+	% hold on
+    % a.plot9=plot(x_matrix(1,:), vapori_plane,...
+             	% '-','color',[0.72,0.27,1.00],'linewidth',a.lw);hold off
+				
+%    scatter(nod(1).terms{x_idx},nod(1).terms{y_idx},2,'filled','w');
+    color = jet;
+    color = flipud(color);
+    colormap(gca,color);
+	caxis([0 1])
+    cbsal = colorbar;
+    cbsal.Label.String = 'Saturation (-)';
+    xlabel('x (m)','FontSize',a.fs);
+	ylabel('z (m)','FontSize',a.fs);
+	axis([0 x_matrix(1,end) 0 y_matrix(end,1)+0.01])	
+
+% yyaxis right
+    % a.plot9=plot(x_matrix(1,:), s_surface_matrix,...
+             % 'w-','linewidth',a.lw);hold off
+    % % ylabel('surface saturation (-)','FontSize',a.fs);
+    % axis([0 x_matrix(1,end) -0.1 2])
+	% get(gca,'xtick');
+    % set(gca,'fontsize',a.fs);
+	% % xlabel('x (m)','FontSize',a.fs);
+    % ylabel('z (m)','FontSize',a.fs);
+    % axis([0 x_matrix(1,end) 0 y_matrix(end,1)+0.01])	
+    % set(gca,'fontsize',a.fs,'XTickLabel',{[]});
 
 %% -------- sub 4 horizontal flux (from .ele for side boundary and from .bcop for bot. boundary) ---------
-if boundary_condition == 1 
-    a.sub4=subplot('position'...
-         ,[fig_pos.left+0.35,fig_pos.bottom-0.34,...
-          fig_pos.length-0.05,0.1]);
-yyaxis left										   
-    a.plot4=plot(x_matrix(1,:), solution_ms(nt,:),...
-             '-','color',[0.9290 0.6940 0.1250]	,'linewidth',a.lw);hold off
-    grid on
-	% grid minor
-	ax = gca;
-	ax.GridAlpha = 0.4;
-	ax.MinorGridAlpha = 0.5;	
-    get(gca,'xtick');
-	set(gca,'YColor',[0.9290 0.6940 0.1250]);
-    set(gca,'fontsize',a.fs);
-    ylabel(['bottom water flux' sprintf('\n') '(m/s)'],'FontSize',a.fs);
-    axis([0 x_matrix(1,end) -1e-5 1e-5])
-yyaxis right		   		  
-    a.plot4=plot(x_matrix(1,:), salt_kgsm2(nt,:),...
-             'k-','linewidth',a.lw);hold off	
-    get(gca,'xtick');
-	set(gca,'YColor','k');
-    set(gca,'fontsize',a.fs);
-    xlabel('x (m)','FontSize',a.fs);
-    ylabel(['bottom salt flux' sprintf('\n') '(kg/s/m^2)'],'FontSize',a.fs);
-    axis([0 x_matrix(1,end) -1e-3 1e-3])
-	% legend('water','salt','FontSize',a.fs,'Location','northwest' )	
-end
-
-if boundary_condition == 2 
-%plot flux at a given horizontal level
-    a.sub4=subplot('position'...
-         ,[fig_pos.left+0.35,fig_pos.bottom-1.5*fig_pos.height,...
-          fig_pos.length-0.05,fig_pos.height/2]);
-	x_flux_matrix_ms  = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
-	y_flux_matrix_ms  = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
-	for i=1:inp.nn2-1
-	x_flux_ms(i) = x_flux_matrix_ms(yclosestIndex_plot(i),i);
-	y_flux_ms(i) = y_flux_matrix_ms(yclosestIndex_plot(i),i);
-	end
-	flux_level_ms = y_flux_ms./abs(y_flux_ms).*(x_flux_ms.^2+y_flux_ms.^2).^0.5;
-	
+% if boundary_condition == 1 
+    % a.sub4=subplot('position'...
+         % ,[fig_pos.left+0.35,fig_pos.bottom-0.34,...
+          % fig_pos.length-0.05,0.1]);
 % yyaxis left										   
-    a.plot4=plot(x_ele_matrix(1,:), flux_level_ms,...
-             '-','color',[0.9290 0.6940 0.1250]	,'linewidth',a.lw);hold off
-    grid on
-	% grid minor
-	ax = gca;
-	ax.GridAlpha = 0.4;
-	ax.MinorGridAlpha = 0.5;	
-    get(gca,'xtick');
-    set(gca,'fontsize',a.fs);
-    ylabel('water flux (g/day)','FontSize',a.fs);
-    axis([0 x_matrix(1,end) -0.002 0.002])
+    % a.plot4=plot(x_matrix(1,:), solution_ms(nt,:),...
+             % '-','color',[0.9290 0.6940 0.1250]	,'linewidth',a.lw);hold off
+    % grid on
+	% % grid minor
+	% ax = gca;
+	% ax.GridAlpha = 0.4;
+	% ax.MinorGridAlpha = 0.5;	
+    % get(gca,'xtick');
+	% set(gca,'YColor',[0.9290 0.6940 0.1250]);
+    % set(gca,'fontsize',a.fs);
+    % ylabel(['bottom water flux' sprintf('\n') '(m/s)'],'FontSize',a.fs);
+    % axis([0 x_matrix(1,end) -1e-5 1e-5])
 % yyaxis right		   		  
     % a.plot4=plot(x_matrix(1,:), salt_kgsm2(nt,:),...
              % 'k-','linewidth',a.lw);hold off	
@@ -362,42 +359,79 @@ if boundary_condition == 2
 	% set(gca,'YColor','k');
     % set(gca,'fontsize',a.fs);
     % xlabel('x (m)','FontSize',a.fs);
-    % ylabel('bottom salt flux (g/day)','FontSize',a.fs);
-    % axis([0 x_matrix(1,end) -5e-3 5e-3])
-	% legend('water','salt','FontSize',a.fs,'Location','northwest' )	
-	
-%plot side boundary flux
-    a.sub4=subplot('position'...
-         ,[fig_pos.left+0.32+fig_pos.length,fig_pos.bottom-0.9*fig_pos.height,...
-          fig_pos.length-0.25,0.75*fig_pos.height]);
-% the flux plot shares the same y axis
-	ax1=gca;
-    ax1_pos = ax1.Position;
-    a.plot8=plot( solution_ms(nt,:),right_boundary_y_plot',...
-        '-','color',[0.9290 0.6940 0.1250]	,'linewidth',a.lw);hold off
-	grid on
-	% grid minor
-	ax1.GridAlpha = 0.4;
-	ax1.MinorGridAlpha = 0.5;	
-    get(gca,'xtick');
-	set(gca,'XColor',[0.9290 0.6940 0.1250]);
-    set(gca,'fontsize',a.fs);
-    ylabel(['boundary water flux' sprintf('\n') '(m/s)'],'FontSize',a.fs);
-    axis([-1e-2 1e-2 0 y_matrix(end,end)])
+    % ylabel(['bottom salt flux' sprintf('\n') '(kg/s/m^2)'],'FontSize',a.fs);
+    % axis([0 x_matrix(1,end) -1e-3 1e-3])
+	% % legend('water','salt','FontSize',a.fs,'Location','northwest' )	
+% end
 
-	ax2 = axes('Position', ax1_pos, 'XAxisLocation', 'top', 'YAxisLocation', 'right');
-	a.plot4=plot( salt_kgsm2(nt,:),right_boundary_y_plot',...
-             'k-','linewidth',a.lw);hold off
-	ax2.XAxisLocation = 'top';
-	ax2.YAxisLocation = 'right';
- 	ax2.Color = 'none';		
-    get(gca,'xtick');
-	set(gca,'XColor','k');
-    set(gca,'fontsize',a.fs);
-	xlabel('x (m)','FontSize',a.fs);
-    ylabel(['boundary salt flux' sprintf('\n') '(kg/s/m^2)'],'FontSize',a.fs);
-    axis([-0.5 0.5 0 y_matrix(end,end)])
-end																
+% if boundary_condition == 2 
+% %plot flux at a given horizontal level
+    % a.sub4=subplot('position'...
+         % ,[fig_pos.left+0.35,fig_pos.bottom-1.5*fig_pos.height,...
+          % fig_pos.length-0.05,fig_pos.height/2]);
+	% x_flux_matrix_ms  = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
+	% y_flux_matrix_ms  = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
+	% for i=1:inp.nn2-1
+	% x_flux_ms(i) = x_flux_matrix_ms(yclosestIndex_plot(i),i);
+	% y_flux_ms(i) = y_flux_matrix_ms(yclosestIndex_plot(i),i);
+	% end
+	% flux_level_ms = y_flux_ms./abs(y_flux_ms).*(x_flux_ms.^2+y_flux_ms.^2).^0.5;
+	
+% % yyaxis left										   
+    % a.plot4=plot(x_ele_matrix(1,:), flux_level_ms,...
+             % '-','color',[0.9290 0.6940 0.1250]	,'linewidth',a.lw);hold off
+    % grid on
+	% % grid minor
+	% ax = gca;
+	% ax.GridAlpha = 0.4;
+	% ax.MinorGridAlpha = 0.5;	
+    % get(gca,'xtick');
+    % set(gca,'fontsize',a.fs);
+    % ylabel('water flux (g/day)','FontSize',a.fs);
+    % axis([0 x_matrix(1,end) -0.002 0.002])
+% % yyaxis right		   		  
+    % % a.plot4=plot(x_matrix(1,:), salt_kgsm2(nt,:),...
+             % % 'k-','linewidth',a.lw);hold off	
+    % % get(gca,'xtick');
+	% % set(gca,'YColor','k');
+    % % set(gca,'fontsize',a.fs);
+    % % xlabel('x (m)','FontSize',a.fs);
+    % % ylabel('bottom salt flux (g/day)','FontSize',a.fs);
+    % % axis([0 x_matrix(1,end) -5e-3 5e-3])
+	% % legend('water','salt','FontSize',a.fs,'Location','northwest' )	
+	
+% %plot side boundary flux
+    % a.sub8=subplot('position'...
+         % ,[fig_pos.left+0.32+fig_pos.length,fig_pos.bottom-0.9*fig_pos.height,...
+          % fig_pos.length-0.25,0.75*fig_pos.height]);
+% % the flux plot shares the same y axis
+	% ax1=gca;
+    % ax1_pos = ax1.Position;
+    % a.plot8=plot( solution_ms(nt,:),right_boundary_y_plot',...
+        % '-','color',[0.9290 0.6940 0.1250]	,'linewidth',a.lw);hold off
+	% grid on
+	% % grid minor
+	% ax1.GridAlpha = 0.4;
+	% ax1.MinorGridAlpha = 0.5;	
+    % get(gca,'xtick');
+	% set(gca,'XColor',[0.9290 0.6940 0.1250]);
+    % set(gca,'fontsize',a.fs);
+    % ylabel(['boundary water flux' sprintf('\n') '(m/s)'],'FontSize',a.fs);
+    % axis([-1e-2 1e-2 0 y_matrix(end,end)])
+
+	% ax2 = axes('Position', ax1_pos, 'XAxisLocation', 'top', 'YAxisLocation', 'right');
+	% a.plot4=plot( salt_kgsm2(nt,:),right_boundary_y_plot',...
+             % 'k-','linewidth',a.lw);hold off
+	% ax2.XAxisLocation = 'top';
+	% ax2.YAxisLocation = 'right';
+ 	% ax2.Color = 'none';		
+    % get(gca,'xtick');
+	% set(gca,'XColor','k');
+    % set(gca,'fontsize',a.fs);
+	% xlabel('x (m)','FontSize',a.fs);
+    % ylabel(['boundary salt flux' sprintf('\n') '(kg/s/m^2)'],'FontSize',a.fs);
+    % axis([-0.5 0.5 0 y_matrix(end,end)])
+% end																
 
 	figure_name=sprintf('day_%.2f.fig',nod(nt+1).tout*c.dayPsec);
 	saveas(a.fig,figure_name)

@@ -20,7 +20,8 @@ y_area_m2	 = y_area_m2';
 %% boundary condition 							 
 if abs(inp.ipbc(1)-inp.ipbc(2))==1
 boundary_condition = 2;%1/bottom boundary   2/right side boundary 
-flux_plot_level_y  = y_ele_matrix(2,end);%set the level for streamline plotting (the bottom ele cannot used to plot streamline)
+flux_plot_level_y  = y_ele_matrix(2,end);%set the level for streamline plotting when side boundary applied (e.g. water table)										 
+										 %(the bottom ele cannot used to plot streamline)
 else
 boundary_condition = 1;
 end	
@@ -50,8 +51,8 @@ end
 % end
 
 %% spatial_related plot
-%salt and solution flux of side (from bcop) 
-if boundary_condition == 1
+%boundary salt and solution flux(from bcop) 
+if boundary_condition == 1 %bottom boundary
 	for i= 1:length(inp.ipbc) 
 		salt_kgs(:,i)      = arrayfun(@(y) y.qpu(i),bcop);
 		salt_kgsm2(:,i)    = salt_kgs(:,i)./bottom_boundary_x_area_m2(i);% for bottom boundary condition
@@ -60,7 +61,7 @@ if boundary_condition == 1
     solution_kgs(:,i)    = arrayfun(@(y) y.qpl(i),bcop);
     solution_ms(:,i)     = solution_kgs(:,i)/(c.rhow_pure_water+700*0.035)/bottom_boundary_x_area_m2(i);
 	end
-elseif boundary_condition == 2
+elseif boundary_condition == 2 %right side boundary
 	for i= 1:length(inp.ipbc) %from top to bottom
 		salt_kgs(:,i)      = arrayfun(@(y) y.qpu(i),bcop);
 		salt_kgsm2(:,i)    = salt_kgs(:,i)./right_boundary_y_area_m2(i);
@@ -71,11 +72,11 @@ elseif boundary_condition == 2
 	end
 end	
 
-%find nodes at a given level (e.g. groundwater table) 
+%find nodes at a given level (e.g. bottom boundary or groundwater table for streamline plot) 
 if boundary_condition == 1
 		x_flux_level = x_ele_matrix(1,:);
-		y_flux_level = y_ele_matrix(2,:);
-	else
+		y_flux_level = y_ele_matrix(2,:); %bottom boundary as the start of stream lines
+elseif boundary_condition == 2
 		for i = 1:inp.nn2-1
 			[yminValue(i), yclosestIndex_plot(i)]=min(abs(flux_plot_level_y - y_ele_matrix(:,i))); %get the node closest to water table by comparing y 
 			x_flux_level(i) = x_ele_matrix(yclosestIndex_plot(i),i);
@@ -619,23 +620,41 @@ yyaxis right
     ylabel('z (m)','FontSize',a.fs);
     axis([-0.5 0.5 0 y_matrix(end,end)])
 end
-%% ------------- sub 9 zoom in velocity --------------
+%% ------------- sub 9 zoom in velocity or flux profile along middle-x--------------
     a.sub9=subplot('position'...
          ,[fig_pos.left+0.77,fig_pos.bottom-0.64,...
           0.15,fig_pos.height]);
     vx_matrix = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1]);
     vy_matrix = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1]);
-	a.plot9=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
-    a.plot9=quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix,20,'y');hold off
+	% a.plot9=contourf(x_matrix,y_matrix,c_matrix,'EdgeColor','none');hold on
+    % a.plot9=quiver(x_ele_matrix,y_ele_matrix,vx_matrix,vy_matrix,20,'y');hold off
 
+    % get(gca,'xtick');
+    % set(gca,'fontsize',a.fs);
+    % xlabel('x (m)','FontSize',a.fs);
+    % ylabel('Elevation (m)','FontSize',a.fs);
+    % title('Velocity')
+    % axis([0.75 0.85 0.31 0.345])    
+    
+  	x_flux_matrix_ms  = reshape(ele(nt).terms{vx_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
+	y_flux_matrix_ms  = reshape(ele(nt).terms{vy_idx},[inp.nn1-1,inp.nn2-1])*inp.por(1);
+	% locate the middle x
+		x_middle_no = round((inp.nn2+1)/2);
+		x_flux_middle_ms = x_flux_matrix_ms(:,x_middle_no);
+		y_flux_middle_ms = y_flux_matrix_ms(:,x_middle_no);
+		
+	flux_middle_ms = (x_flux_middle_ms.^2+y_flux_middle_ms.^2).^0.5;	
+    a.plot2=plot(flux_middle_ms,y_ele_matrix(:,x_middle_no), ...
+             '-','color',[0.4940 0.1840 0.5560],'linewidth',a.lw);hold off
+    grid on
+	grid minor
+	ax = gca;
+	ax.GridAlpha = 0.4;
+	ax.MinorGridAlpha = 0.5;	
     get(gca,'xtick');
     set(gca,'fontsize',a.fs);
-    xlabel('x (m)','FontSize',a.fs);
-    ylabel('Elevation (m)','FontSize',a.fs);
-    title('Velocity')
-    axis([0.75 0.85 0.31 0.345])    
-    
-  
+    xlabel('flux (m/s)','FontSize',a.fs);
+    % axis([0 x_matrix(1,end) -0.002 0.002])					
     
 	F = getframe(gcf); % save the current figure
     writeVideo(mov,F);% add it as the next frame of the movie

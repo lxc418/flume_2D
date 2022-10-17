@@ -1,0 +1,18 @@
+#!/bin/bash
+# set the number of nodes
+#SBATCH --nodes=1
+
+# number of CPU cores per task
+#SBATCH -p macondo
+
+# set max wallclock time
+#SBATCH --time=2400:00:00
+
+# set name of job
+#SBATCH --job-name=xc_column
+
+# mail alert at start, end and abortion of execution
+#SBATCH --mail-type=ALL
+
+#SBATCH --mail-user=xiaocheng.liu@uq.net.au
+matlab -singleCompThread -nodisplay -nosplash -r "run('/storage/macondo/s4524462/SutraLab/mfiles/slsetpath.m'); sl_read; surface_Rayleigh_number; exit;"
